@@ -1,12 +1,24 @@
-package main
+package api
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/gorilla/mux"
 	"net/http"
+	"sealway-strava/infra"
 )
 
+type DefaultApi struct {
+	Router          *mux.Router
+	ApplicationSlug string
+}
+
+func (api *DefaultApi) Prefix(serverName string, path string) string {
+	return fmt.Sprintf("/%s/%s%s", api.ApplicationSlug, serverName, path)
+}
+
 func respondWithError(w http.ResponseWriter, code int, message string) {
-	log.Error(message)
+	infra.Log.Error(message)
 
 	respondWithJSON(w, code, map[string]string{"error": message})
 }

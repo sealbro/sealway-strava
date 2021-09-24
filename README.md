@@ -27,3 +27,7 @@ sealway strava integration
 - gRPC/API получает запрос по пользователям (AthleteId, token, priority) с приоритетами для загрузки данных
 - если данных нет то возвращается список AthleteId + NextRequestDate + WaitActivities(ExpectedDate, ActivityId)
 - если данные есть и готовы, то возвращаются или ActivityId[] c которыми нужно будет идти в GraphQL
+- добавить крон сервис который проверяет для каких AthleteID появились токены и отправляет из в очередь
+  - сгруппировать по ActivityId и вернуть только уникальные
+- расширить модель graphql стравы
+- заменить subscibe ID на _id ActivityId

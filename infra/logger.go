@@ -1,4 +1,4 @@
-package main
+package infra
 
 import (
 	"encoding/json"
@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 )
+
+var Log = &Logger{}
 
 type Logger struct{}
 

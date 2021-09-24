@@ -1,0 +1,27 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+scalar Date
+
+type DetailedActivity {
+  id: ID!
+  distance: Float!
+  name: String!
+  description: String
+}
+
+type Query {
+  activities: [DetailedActivity!]!
+}
+
+input NewAthleteToken {
+  athleteId: Int!
+  access: String!
+  refresh: String!
+  expired: Date!
+}
+
+type Mutation {
+  addToken(input: NewAthleteToken!): Int!
+}

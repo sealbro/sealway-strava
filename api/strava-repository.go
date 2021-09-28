@@ -48,10 +48,12 @@ func (repository *StravaRepository) AddDetailedActivity(activity *strava.Detaile
 	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaActivityCollectionName)
 	ctx, cancel := createTimeoutContext()
 	defer cancel()
+	collection.DeleteOne(ctx, bson.D{{"_id", activity.ID}})
+
 	_, err := collection.InsertOne(ctx, activity)
 
 	if err != nil {
-		return fmt.Errorf("can't insert activity %d : %w", activity.Id, err)
+		return fmt.Errorf("can't insert activity %d : %w", activity.ID, err)
 	}
 
 	return nil

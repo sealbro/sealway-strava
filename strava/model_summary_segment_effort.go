@@ -15,17 +15,17 @@ import (
 
 type SummarySegmentEffort struct {
 	// The unique identifier of this effort
-	Id int64 `bson:"id" json:"id,omitempty"`
+	ID int64 `bson:"id" json:"id,omitempty"`
 	// The unique identifier of the activity related to this effort
-	ActivityId int64 `bson:"activity_id" json:"activity_id,omitempty"`
+	ActivityID int64 `bson:"activity_id" json:"activity_id,omitempty"`
 	// The effort's elapsed time
-	ElapsedTime int32 `bson:"elapsed_time" json:"elapsed_time,omitempty"`
+	ElapsedTime int64 `bson:"elapsed_time" json:"elapsed_time,omitempty"`
 	// The time at which the effort was started.
 	StartDate time.Time `bson:"start_date" json:"start_date,omitempty"`
 	// The time at which the effort was started in the local timezone.
 	StartDateLocal time.Time `bson:"start_date_local" json:"start_date_local,omitempty"`
 	// The effort's distance in meters
-	Distance float32 `bson:"distance" json:"distance,omitempty"`
+	Distance float64 `bson:"distance" json:"distance,omitempty"`
 	// Whether this effort is the current best on the leaderboard
 	IsKom bool `bson:"is_kom" json:"is_kom,omitempty"`
 }

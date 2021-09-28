@@ -11,6 +11,6 @@ package strava
 
 type PhotosSummary struct {
 	// The number of photos
-	Count   int32                 `bson:"count" json:"count,omitempty"`
+	Count   int64                 `bson:"count" json:"count,omitempty"`
 	Primary *PhotosSummaryPrimary `bson:"primary" json:"primary,omitempty"`
 }

@@ -11,24 +11,24 @@ package strava
 
 type SummarySegment struct {
 	// The unique identifier of this segment
-	Id int64 `bson:"id" json:"id,omitempty"`
+	ID int64 `bson:"id" json:"id,omitempty"`
 	// The name of this segment
 	Name         string `bson:"name" json:"name,omitempty"`
 	ActivityType string `bson:"activity_type" json:"activity_type,omitempty"`
 	// The segment's distance, in meters
-	Distance float32 `bson:"distance" json:"distance,omitempty"`
+	Distance float64 `bson:"distance" json:"distance,omitempty"`
 	// The segment's average grade, in percents
-	AverageGrade float32 `bson:"average_grade" json:"average_grade,omitempty"`
+	AverageGrade float64 `bson:"average_grade" json:"average_grade,omitempty"`
 	// The segments's maximum grade, in percents
-	MaximumGrade float32 `bson:"maximum_grade" json:"maximum_grade,omitempty"`
+	MaximumGrade float64 `bson:"maximum_grade" json:"maximum_grade,omitempty"`
 	// The segments's highest elevation, in meters
-	ElevationHigh float32 `bson:"elevation_high" json:"elevation_high,omitempty"`
+	ElevationHigh float64 `bson:"elevation_high" json:"elevation_high,omitempty"`
 	// The segments's lowest elevation, in meters
-	ElevationLow float32    `bson:"elevation_low" json:"elevation_low,omitempty"`
-	StartLatlng  *[]float32 `bson:"start_latlng" json:"start_latlng,omitempty"`
-	EndLatlng    *[]float32 `bson:"end_latlng" json:"end_latlng,omitempty"`
+	ElevationLow float64    `bson:"elevation_low" json:"elevation_low,omitempty"`
+	StartLatlng  *[]float64 `bson:"start_latlng" json:"start_latlng,omitempty"`
+	EndLatlng    *[]float64 `bson:"end_latlng" json:"end_latlng,omitempty"`
 	// The category of the climb [0, 5]. Higher is harder ie. 5 is Hors catégorie, 0 is uncategorized in climb_category.
-	ClimbCategory int32 `bson:"climb_category" json:"climb_category,omitempty"`
+	ClimbCategory int64 `bson:"climb_category" json:"climb_category,omitempty"`
 	// The segments's city.
 	City string `bson:"city" json:"city,omitempty"`
 	// The segments's state or geographical region.

@@ -2,26 +2,209 @@
 #
 # https://gqlgen.com/getting-started/
 
-scalar Date
+scalar Time
+scalar ActivityType
 
 type DetailedActivity {
   id: ID!
-  distance: Float!
+  external_id: String!
+  upload_id: Int!
+  athlete: MetaAthlete
   name: String!
-  description: String
+  distance: Float!
+  moving_time: Int!
+  elapsed_time: Int!
+  total_elevation_gain: Float!
+  elev_high: Float!
+  elev_low: Float!
+  type: ActivityType
+  start_date: Time!
+  start_date_local: Time!
+  timezone: String!
+  start_latlng: [Float!]
+  end_latlng: [Float!]
+  achievement_count: Int!
+  kudos_count: Int!
+  comment_count: Int!
+  athlete_count: Int!
+  photo_count: Int!
+  total_photo_count: Int!
+  map: PolylineMap
+  trainer: Boolean!
+  commute: Boolean!
+  manual: Boolean!
+  private: Boolean!
+  flagged: Boolean!
+  workout_type: Int!
+  upload_id_str: String!
+  average_speed: Float!
+  max_speed: Float!
+  has_kudoed: Boolean!
+  gear_id: String!
+  kilojoules: Float!
+  average_watts: Float!
+  device_watts: Boolean!
+  max_watts: Int!
+  weighted_average_watts: Int!
+  description: String!
+  photos: PhotosSummary
+  gear: SummaryGear
+  calories: Float!
+  segment_efforts: [DetailedSegmentEffort!]
+  device_name: String!
+  embed_token: String!
+  splits_metric: [Split!]
+  splits_standard: [Split!]
+  laps: [Lap!]
+  best_efforts: [DetailedSegmentEffort!]
 }
 
+type MetaAthlete {
+  id: ID!
+}
+
+type MetaActivity {
+  id: ID!
+}
+
+type PolylineMap {
+  id: String!
+  polyline: String!
+  summary_polyline: String!
+}
+
+type PhotosSummary {
+  count: Int!
+  primary: PhotosSummaryPrimary
+}
+
+type PhotosSummaryPrimary {
+  id: ID!
+  source: Int!
+  unique_id: String!
+  urls: [String!]
+}
+
+type SummaryGear {
+  id: String!
+  resource_state: Int!
+  primary: Boolean!
+  name: String!
+  distance: Float!
+}
+
+type Split {
+  average_speed: Float!
+  distance: Float!
+  elapsed_time: Int!
+  elevation_difference: Float!
+  pace_zone: Int!
+  moving_time: Int!
+  split: Int!
+}
+
+type Lap {
+  id: ID!
+  activity: MetaActivity
+  athlete: MetaAthlete
+  average_cadence: Float!
+  average_speed: Float!
+  distance: Float!
+  elapsed_time: Int!
+  start_index: Int!
+  end_index: Int!
+  lap_index: Int!
+  max_speed: Float!
+  moving_time: Int!
+  name: String!
+  pace_zone: Int!
+  split: Int!
+  start_date: Time!
+  start_date_local: Time!
+  total_elevation_gain: Float!
+}
+
+type DetailedSegmentEffort {
+  id: ID!
+  activity_id: Int!
+  elapsed_time: Int!
+  start_date: Time!
+  start_date_local: Time!
+  distance: Float!
+  is_kom:  Boolean!
+  name: String!
+  activity: MetaActivity
+  athlete: MetaAthlete
+  moving_time: Int!
+  start_index: Int!
+  end_index: Int!
+  average_cadence: Float!
+  average_watts: Float!
+  device_watts: Boolean!
+  average_heartrate: Float!
+  max_heartrate: Float!
+  segment: SummarySegment
+  kom_rank: Int!
+  pr_rank: Int!
+  hidden: Boolean!
+}
+
+type SummarySegment {
+  id: ID!
+  name: String!
+  activity_type: String!
+  distance: Float!
+  average_grade: Float!
+  maximum_grade: Float!
+  elevation_high: Float!
+  elevation_low: Float!
+  start_latlng: [Float!]
+  end_latlng: [Float!]
+  climb_category: Int!
+  city: String!
+  state: String!
+  country: String!
+  private: Boolean!
+  athlete_pr_effort: SummarySegmentEffort
+  athlete_segment_stats: SummaryPrSegmentEffort
+}
+
+type SummarySegmentEffort {
+  id: ID!
+  activity_id: Int!
+  elapsed_time: Int!
+  start_date: Time!
+  start_date_local: Time!
+  distance: Float!
+  is_kom:  Boolean!
+}
+
+type SummaryPrSegmentEffort {
+  pr_activity_id: Int!
+  pr_elapsed_time: Int!
+  pr_date: Time!
+  effort_count: Int!
+}
+
+
+
+
 type Query {
-  activities: [DetailedActivity!]!
+  activity (id: Int!): DetailedActivity
+  activities (athlete_ids: [Int!]): [DetailedActivity!]
 }
 
 input NewAthleteToken {
-  athleteId: Int!
+  athlete_id: Int!
   access: String!
   refresh: String!
-  expired: Date!
+  expired: Time!
 }
 
 type Mutation {
   addToken(input: NewAthleteToken!): Int!
+}
+
+type Subscription {
+    activities: [DetailedActivity!]!
 }

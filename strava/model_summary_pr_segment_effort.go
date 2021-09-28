@@ -15,11 +15,11 @@ import (
 
 type SummaryPrSegmentEffort struct {
 	// The unique identifier of the activity related to the PR effort.
-	PrActivityId int64 `bson:"pr_activity_id" json:"pr_activity_id,omitempty"`
+	PrActivityID int64 `bson:"pr_activity_id" json:"pr_activity_id,omitempty"`
 	// The elapsed time ot the PR effort.
-	PrElapsedTime int32 `bson:"pr_elapsed_time" json:"pr_elapsed_time,omitempty"`
+	PrElapsedTime int64 `bson:"pr_elapsed_time" json:"pr_elapsed_time,omitempty"`
 	// The time at which the PR effort was started.
 	PrDate time.Time `bson:"pr_date" json:"pr_date,omitempty"`
 	// Number of efforts by the authenticated athlete on this segment.
-	EffortCount int32 `bson:"effort_count" json:"effort_count,omitempty"`
+	EffortCount int64 `bson:"effort_count" json:"effort_count,omitempty"`
 }

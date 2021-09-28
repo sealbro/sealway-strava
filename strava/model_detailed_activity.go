@@ -15,48 +15,48 @@ import (
 
 type DetailedActivity struct {
 	// The unique identifier of the activity
-	Id int64 `bson:"id" json:"id,omitempty"`
+	ID int64 `bson:"_id" json:"id,omitempty"`
 	// The identifier provided at upload time
-	ExternalId string `bson:"external_id" json:"external_id,omitempty"`
+	ExternalID string `bson:"external_id" json:"external_id,omitempty"`
 	// The identifier of the upload that resulted in this activity
-	UploadId int64        `bson:"upload_id" json:"upload_id,omitempty"`
+	UploadID int64        `bson:"upload_id" json:"upload_id,omitempty"`
 	Athlete  *MetaAthlete `bson:"athlete" json:"athlete,omitempty"`
 	// The name of the activity
 	Name string `bson:"name" json:"name,omitempty"`
 	// The activity's distance, in meters
-	Distance float32 `bson:"distance" json:"distance,omitempty"`
+	Distance float64 `bson:"distance" json:"distance,omitempty"`
 	// The activity's moving time, in seconds
-	MovingTime int32 `bson:"moving_time" json:"moving_time,omitempty"`
+	MovingTime int64 `bson:"moving_time" json:"moving_time,omitempty"`
 	// The activity's elapsed time, in seconds
-	ElapsedTime int32 `bson:"elapsed_time" json:"elapsed_time,omitempty"`
+	ElapsedTime int64 `bson:"elapsed_time" json:"elapsed_time,omitempty"`
 	// The activity's total elevation gain.
-	TotalElevationGain float32 `bson:"total_elevation_gain" json:"total_elevation_gain,omitempty"`
+	TotalElevationGain float64 `bson:"total_elevation_gain" json:"total_elevation_gain,omitempty"`
 	// The activity's highest elevation, in meters
-	ElevHigh float32 `bson:"elev_high" json:"elev_high,omitempty"`
+	ElevHigh float64 `bson:"elev_high" json:"elev_high,omitempty"`
 	// The activity's lowest elevation, in meters
-	ElevLow float32       `bson:"elev_low" json:"elev_low,omitempty"`
-	Type_   *ActivityType `bson:"type" json:"type,omitempty"`
+	ElevLow float64       `bson:"elev_low" json:"elev_low,omitempty"`
+	Type    *ActivityType `bson:"type" json:"type,omitempty"`
 	// The time at which the activity was started.
 	StartDate time.Time `bson:"start_date" json:"start_date,omitempty"`
 	// The time at which the activity was started in the local timezone.
 	StartDateLocal time.Time `bson:"start_date_local" json:"start_date_local,omitempty"`
 	// The timezone of the activity
 	Timezone    string     `bson:"timezone" json:"timezone,omitempty"`
-	StartLatlng *[]float32 `bson:"start_latlng" json:"start_latlng,omitempty"`
-	EndLatlng   *[]float32 `bson:"end_latlng" json:"end_latlng,omitempty"`
+	StartLatlng *[]float64 `bson:"start_latlng" json:"start_latlng,omitempty"`
+	EndLatlng   *[]float64 `bson:"end_latlng" json:"end_latlng,omitempty"`
 	// The number of achievements gained during this activity
-	AchievementCount int32 `bson:"achievement_count" json:"achievement_count,omitempty"`
+	AchievementCount int64 `bson:"achievement_count" json:"achievement_count,omitempty"`
 	// The number of kudos given for this activity
-	KudosCount int32 `bson:"kudos_count" json:"kudos_count,omitempty"`
+	KudosCount int64 `bson:"kudos_count" json:"kudos_count,omitempty"`
 	// The number of comments for this activity
-	CommentCount int32 `bson:"comment_count" json:"comment_count,omitempty"`
+	CommentCount int64 `bson:"comment_count" json:"comment_count,omitempty"`
 	// The number of athletes for taking part in a group activity
-	AthleteCount int32 `bson:"athlete_count" json:"athlete_count,omitempty"`
+	AthleteCount int64 `bson:"athlete_count" json:"athlete_count,omitempty"`
 	// The number of Instagram photos for this activity
-	PhotoCount int32 `bson:"photo_count" json:"photo_count,omitempty"`
+	PhotoCount int64 `bson:"photo_count" json:"photo_count,omitempty"`
 	// The number of Instagram and Strava photos for this activity
-	TotalPhotoCount int32        `bson:"total_photo_count" json:"total_photo_count,omitempty"`
-	Map_            *PolylineMap `bson:"map" json:"map,omitempty"`
+	TotalPhotoCount int64        `bson:"total_photo_count" json:"total_photo_count,omitempty"`
+	Map             *PolylineMap `bson:"map" json:"map,omitempty"`
 	// Whether this activity was recorded on a training machine
 	Trainer bool `bson:"trainer" json:"trainer,omitempty"`
 	// Whether this activity is a commute
@@ -68,33 +68,33 @@ type DetailedActivity struct {
 	// Whether this activity is flagged
 	Flagged bool `bson:"flagged" json:"flagged,omitempty"`
 	// The activity's workout type
-	WorkoutType int32 `bson:"workout_type" json:"workout_type,omitempty"`
+	WorkoutType int64 `bson:"workout_type" json:"workout_type,omitempty"`
 	// The unique identifier of the upload in string format
-	UploadIdStr string `bson:"upload_id_str" json:"upload_id_str,omitempty"`
+	UploadIDStr string `bson:"upload_id_str" json:"upload_id_str,omitempty"`
 	// The activity's average speed, in meters per second
-	AverageSpeed float32 `bson:"average_speed" json:"average_speed,omitempty"`
+	AverageSpeed float64 `bson:"average_speed" json:"average_speed,omitempty"`
 	// The activity's max speed, in meters per second
-	MaxSpeed float32 `bson:"max_speed" json:"max_speed,omitempty"`
+	MaxSpeed float64 `bson:"max_speed" json:"max_speed,omitempty"`
 	// Whether the logged-in athlete has kudoed this activity
 	HasKudoed bool `bson:"has_kudoed" json:"has_kudoed,omitempty"`
 	// The id of the gear for the activity
-	GearId string `bson:"gear_id" json:"gear_id,omitempty"`
+	GearID string `bson:"gear_id" json:"gear_id,omitempty"`
 	// The total work done in kilojoules during this activity. Rides only
-	Kilojoules float32 `bson:"kilojoules" json:"kilojoules,omitempty"`
+	Kilojoules float64 `bson:"kilojoules" json:"kilojoules,omitempty"`
 	// Average power output in watts during this activity. Rides only
-	AverageWatts float32 `bson:"average_watts" json:"average_watts,omitempty"`
+	AverageWatts float64 `bson:"average_watts" json:"average_watts,omitempty"`
 	// Whether the watts are from a power meter, false if estimated
 	DeviceWatts bool `bson:"device_watts" json:"device_watts,omitempty"`
 	// Rides with power meter data only
-	MaxWatts int32 `bson:"max_watts" json:"max_watts,omitempty"`
+	MaxWatts int64 `bson:"max_watts" json:"max_watts,omitempty"`
 	// Similar to Normalized Power. Rides with power meter data only
-	WeightedAverageWatts int32 `bson:"weighted_average_watts" json:"weighted_average_watts,omitempty"`
+	WeightedAverageWatts int64 `bson:"weighted_average_watts" json:"weighted_average_watts,omitempty"`
 	// The description of the activity
 	Description string         `bson:"description" json:"description,omitempty"`
 	Photos      *PhotosSummary `bson:"photos" json:"photos,omitempty"`
 	Gear        *SummaryGear   `bson:"gear" json:"gear,omitempty"`
 	// The number of kilocalories consumed during this activity
-	Calories       float32                 `bson:"calories" json:"calories,omitempty"`
+	Calories       float64                 `bson:"calories" json:"calories,omitempty"`
 	SegmentEfforts []DetailedSegmentEffort `bson:"segment_efforts" json:"segment_efforts,omitempty"`
 	// The name of the device used to record the activity
 	DeviceName string `bson:"device_name" json:"device_name,omitempty"`

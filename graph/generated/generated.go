@@ -6,10 +6,12 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"sealway-strava/graph/model"
+	"sealway-strava/strava"
 	"strconv"
 	"sync"
-	"sync/atomic"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
@@ -37,6 +39,7 @@ type Config struct {
 type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
+	Subscription() SubscriptionResolver
 }
 
 type DirectiveRoot struct {
@@ -44,26 +47,209 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	DetailedActivity struct {
-		Description func(childComplexity int) int
-		Distance    func(childComplexity int) int
-		ID          func(childComplexity int) int
-		Name        func(childComplexity int) int
+		AchievementCount     func(childComplexity int) int
+		Athlete              func(childComplexity int) int
+		AthleteCount         func(childComplexity int) int
+		AverageSpeed         func(childComplexity int) int
+		AverageWatts         func(childComplexity int) int
+		BestEfforts          func(childComplexity int) int
+		Calories             func(childComplexity int) int
+		CommentCount         func(childComplexity int) int
+		Commute              func(childComplexity int) int
+		Description          func(childComplexity int) int
+		DeviceName           func(childComplexity int) int
+		DeviceWatts          func(childComplexity int) int
+		Distance             func(childComplexity int) int
+		ElapsedTime          func(childComplexity int) int
+		ElevHigh             func(childComplexity int) int
+		ElevLow              func(childComplexity int) int
+		EmbedToken           func(childComplexity int) int
+		EndLatlng            func(childComplexity int) int
+		ExternalID           func(childComplexity int) int
+		Flagged              func(childComplexity int) int
+		Gear                 func(childComplexity int) int
+		GearID               func(childComplexity int) int
+		HasKudoed            func(childComplexity int) int
+		ID                   func(childComplexity int) int
+		Kilojoules           func(childComplexity int) int
+		KudosCount           func(childComplexity int) int
+		Laps                 func(childComplexity int) int
+		Manual               func(childComplexity int) int
+		Map                  func(childComplexity int) int
+		MaxSpeed             func(childComplexity int) int
+		MaxWatts             func(childComplexity int) int
+		MovingTime           func(childComplexity int) int
+		Name                 func(childComplexity int) int
+		PhotoCount           func(childComplexity int) int
+		Photos               func(childComplexity int) int
+		Private              func(childComplexity int) int
+		SegmentEfforts       func(childComplexity int) int
+		SplitsMetric         func(childComplexity int) int
+		SplitsStandard       func(childComplexity int) int
+		StartDate            func(childComplexity int) int
+		StartDateLocal       func(childComplexity int) int
+		StartLatlng          func(childComplexity int) int
+		Timezone             func(childComplexity int) int
+		TotalElevationGain   func(childComplexity int) int
+		TotalPhotoCount      func(childComplexity int) int
+		Trainer              func(childComplexity int) int
+		Type                 func(childComplexity int) int
+		UploadID             func(childComplexity int) int
+		UploadIDStr          func(childComplexity int) int
+		WeightedAverageWatts func(childComplexity int) int
+		WorkoutType          func(childComplexity int) int
+	}
+
+	DetailedSegmentEffort struct {
+		Activity         func(childComplexity int) int
+		ActivityID       func(childComplexity int) int
+		Athlete          func(childComplexity int) int
+		AverageCadence   func(childComplexity int) int
+		AverageHeartrate func(childComplexity int) int
+		AverageWatts     func(childComplexity int) int
+		DeviceWatts      func(childComplexity int) int
+		Distance         func(childComplexity int) int
+		ElapsedTime      func(childComplexity int) int
+		EndIndex         func(childComplexity int) int
+		Hidden           func(childComplexity int) int
+		ID               func(childComplexity int) int
+		IsKom            func(childComplexity int) int
+		KomRank          func(childComplexity int) int
+		MaxHeartrate     func(childComplexity int) int
+		MovingTime       func(childComplexity int) int
+		Name             func(childComplexity int) int
+		PrRank           func(childComplexity int) int
+		Segment          func(childComplexity int) int
+		StartDate        func(childComplexity int) int
+		StartDateLocal   func(childComplexity int) int
+		StartIndex       func(childComplexity int) int
+	}
+
+	Lap struct {
+		Activity           func(childComplexity int) int
+		Athlete            func(childComplexity int) int
+		AverageCadence     func(childComplexity int) int
+		AverageSpeed       func(childComplexity int) int
+		Distance           func(childComplexity int) int
+		ElapsedTime        func(childComplexity int) int
+		EndIndex           func(childComplexity int) int
+		ID                 func(childComplexity int) int
+		LapIndex           func(childComplexity int) int
+		MaxSpeed           func(childComplexity int) int
+		MovingTime         func(childComplexity int) int
+		Name               func(childComplexity int) int
+		PaceZone           func(childComplexity int) int
+		Split              func(childComplexity int) int
+		StartDate          func(childComplexity int) int
+		StartDateLocal     func(childComplexity int) int
+		StartIndex         func(childComplexity int) int
+		TotalElevationGain func(childComplexity int) int
+	}
+
+	MetaActivity struct {
+		ID func(childComplexity int) int
+	}
+
+	MetaAthlete struct {
+		ID func(childComplexity int) int
 	}
 
 	Mutation struct {
 		AddToken func(childComplexity int, input model.NewAthleteToken) int
 	}
 
+	PhotosSummary struct {
+		Count   func(childComplexity int) int
+		Primary func(childComplexity int) int
+	}
+
+	PhotosSummaryPrimary struct {
+		ID       func(childComplexity int) int
+		Source   func(childComplexity int) int
+		UniqueID func(childComplexity int) int
+		Urls     func(childComplexity int) int
+	}
+
+	PolylineMap struct {
+		ID              func(childComplexity int) int
+		Polyline        func(childComplexity int) int
+		SummaryPolyline func(childComplexity int) int
+	}
+
 	Query struct {
+		Activities func(childComplexity int, athleteIds []int64) int
+		Activity   func(childComplexity int, id int64) int
+	}
+
+	Split struct {
+		AverageSpeed        func(childComplexity int) int
+		Distance            func(childComplexity int) int
+		ElapsedTime         func(childComplexity int) int
+		ElevationDifference func(childComplexity int) int
+		MovingTime          func(childComplexity int) int
+		PaceZone            func(childComplexity int) int
+		Split               func(childComplexity int) int
+	}
+
+	Subscription struct {
 		Activities func(childComplexity int) int
+	}
+
+	SummaryGear struct {
+		Distance      func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Name          func(childComplexity int) int
+		Primary       func(childComplexity int) int
+		ResourceState func(childComplexity int) int
+	}
+
+	SummaryPrSegmentEffort struct {
+		EffortCount   func(childComplexity int) int
+		PrActivityID  func(childComplexity int) int
+		PrDate        func(childComplexity int) int
+		PrElapsedTime func(childComplexity int) int
+	}
+
+	SummarySegment struct {
+		ActivityType        func(childComplexity int) int
+		AthletePrEffort     func(childComplexity int) int
+		AthleteSegmentStats func(childComplexity int) int
+		AverageGrade        func(childComplexity int) int
+		City                func(childComplexity int) int
+		ClimbCategory       func(childComplexity int) int
+		Country             func(childComplexity int) int
+		Distance            func(childComplexity int) int
+		ElevationHigh       func(childComplexity int) int
+		ElevationLow        func(childComplexity int) int
+		EndLatlng           func(childComplexity int) int
+		ID                  func(childComplexity int) int
+		MaximumGrade        func(childComplexity int) int
+		Name                func(childComplexity int) int
+		Private             func(childComplexity int) int
+		StartLatlng         func(childComplexity int) int
+		State               func(childComplexity int) int
+	}
+
+	SummarySegmentEffort struct {
+		ActivityID     func(childComplexity int) int
+		Distance       func(childComplexity int) int
+		ElapsedTime    func(childComplexity int) int
+		ID             func(childComplexity int) int
+		IsKom          func(childComplexity int) int
+		StartDate      func(childComplexity int) int
+		StartDateLocal func(childComplexity int) int
 	}
 }
 
 type MutationResolver interface {
-	AddToken(ctx context.Context, input model.NewAthleteToken) (int, error)
+	AddToken(ctx context.Context, input model.NewAthleteToken) (int64, error)
 }
 type QueryResolver interface {
-	Activities(ctx context.Context) ([]*model.DetailedActivity, error)
+	Activity(ctx context.Context, id int64) (*strava.DetailedActivity, error)
+	Activities(ctx context.Context, athleteIds []int64) ([]*strava.DetailedActivity, error)
+}
+type SubscriptionResolver interface {
+	Activities(ctx context.Context) (<-chan []*strava.DetailedActivity, error)
 }
 
 type executableSchema struct {
@@ -81,12 +267,89 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
+	case "DetailedActivity.achievement_count":
+		if e.complexity.DetailedActivity.AchievementCount == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.AchievementCount(childComplexity), true
+
+	case "DetailedActivity.athlete":
+		if e.complexity.DetailedActivity.Athlete == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.Athlete(childComplexity), true
+
+	case "DetailedActivity.athlete_count":
+		if e.complexity.DetailedActivity.AthleteCount == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.AthleteCount(childComplexity), true
+
+	case "DetailedActivity.average_speed":
+		if e.complexity.DetailedActivity.AverageSpeed == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.AverageSpeed(childComplexity), true
+
+	case "DetailedActivity.average_watts":
+		if e.complexity.DetailedActivity.AverageWatts == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.AverageWatts(childComplexity), true
+
+	case "DetailedActivity.best_efforts":
+		if e.complexity.DetailedActivity.BestEfforts == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.BestEfforts(childComplexity), true
+
+	case "DetailedActivity.calories":
+		if e.complexity.DetailedActivity.Calories == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.Calories(childComplexity), true
+
+	case "DetailedActivity.comment_count":
+		if e.complexity.DetailedActivity.CommentCount == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.CommentCount(childComplexity), true
+
+	case "DetailedActivity.commute":
+		if e.complexity.DetailedActivity.Commute == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.Commute(childComplexity), true
+
 	case "DetailedActivity.description":
 		if e.complexity.DetailedActivity.Description == nil {
 			break
 		}
 
 		return e.complexity.DetailedActivity.Description(childComplexity), true
+
+	case "DetailedActivity.device_name":
+		if e.complexity.DetailedActivity.DeviceName == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.DeviceName(childComplexity), true
+
+	case "DetailedActivity.device_watts":
+		if e.complexity.DetailedActivity.DeviceWatts == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.DeviceWatts(childComplexity), true
 
 	case "DetailedActivity.distance":
 		if e.complexity.DetailedActivity.Distance == nil {
@@ -95,6 +358,76 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DetailedActivity.Distance(childComplexity), true
 
+	case "DetailedActivity.elapsed_time":
+		if e.complexity.DetailedActivity.ElapsedTime == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.ElapsedTime(childComplexity), true
+
+	case "DetailedActivity.elev_high":
+		if e.complexity.DetailedActivity.ElevHigh == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.ElevHigh(childComplexity), true
+
+	case "DetailedActivity.elev_low":
+		if e.complexity.DetailedActivity.ElevLow == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.ElevLow(childComplexity), true
+
+	case "DetailedActivity.embed_token":
+		if e.complexity.DetailedActivity.EmbedToken == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.EmbedToken(childComplexity), true
+
+	case "DetailedActivity.end_latlng":
+		if e.complexity.DetailedActivity.EndLatlng == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.EndLatlng(childComplexity), true
+
+	case "DetailedActivity.external_id":
+		if e.complexity.DetailedActivity.ExternalID == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.ExternalID(childComplexity), true
+
+	case "DetailedActivity.flagged":
+		if e.complexity.DetailedActivity.Flagged == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.Flagged(childComplexity), true
+
+	case "DetailedActivity.gear":
+		if e.complexity.DetailedActivity.Gear == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.Gear(childComplexity), true
+
+	case "DetailedActivity.gear_id":
+		if e.complexity.DetailedActivity.GearID == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.GearID(childComplexity), true
+
+	case "DetailedActivity.has_kudoed":
+		if e.complexity.DetailedActivity.HasKudoed == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.HasKudoed(childComplexity), true
+
 	case "DetailedActivity.id":
 		if e.complexity.DetailedActivity.ID == nil {
 			break
@@ -102,12 +435,488 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DetailedActivity.ID(childComplexity), true
 
+	case "DetailedActivity.kilojoules":
+		if e.complexity.DetailedActivity.Kilojoules == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.Kilojoules(childComplexity), true
+
+	case "DetailedActivity.kudos_count":
+		if e.complexity.DetailedActivity.KudosCount == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.KudosCount(childComplexity), true
+
+	case "DetailedActivity.laps":
+		if e.complexity.DetailedActivity.Laps == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.Laps(childComplexity), true
+
+	case "DetailedActivity.manual":
+		if e.complexity.DetailedActivity.Manual == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.Manual(childComplexity), true
+
+	case "DetailedActivity.map":
+		if e.complexity.DetailedActivity.Map == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.Map(childComplexity), true
+
+	case "DetailedActivity.max_speed":
+		if e.complexity.DetailedActivity.MaxSpeed == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.MaxSpeed(childComplexity), true
+
+	case "DetailedActivity.max_watts":
+		if e.complexity.DetailedActivity.MaxWatts == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.MaxWatts(childComplexity), true
+
+	case "DetailedActivity.moving_time":
+		if e.complexity.DetailedActivity.MovingTime == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.MovingTime(childComplexity), true
+
 	case "DetailedActivity.name":
 		if e.complexity.DetailedActivity.Name == nil {
 			break
 		}
 
 		return e.complexity.DetailedActivity.Name(childComplexity), true
+
+	case "DetailedActivity.photo_count":
+		if e.complexity.DetailedActivity.PhotoCount == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.PhotoCount(childComplexity), true
+
+	case "DetailedActivity.photos":
+		if e.complexity.DetailedActivity.Photos == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.Photos(childComplexity), true
+
+	case "DetailedActivity.private":
+		if e.complexity.DetailedActivity.Private == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.Private(childComplexity), true
+
+	case "DetailedActivity.segment_efforts":
+		if e.complexity.DetailedActivity.SegmentEfforts == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.SegmentEfforts(childComplexity), true
+
+	case "DetailedActivity.splits_metric":
+		if e.complexity.DetailedActivity.SplitsMetric == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.SplitsMetric(childComplexity), true
+
+	case "DetailedActivity.splits_standard":
+		if e.complexity.DetailedActivity.SplitsStandard == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.SplitsStandard(childComplexity), true
+
+	case "DetailedActivity.start_date":
+		if e.complexity.DetailedActivity.StartDate == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.StartDate(childComplexity), true
+
+	case "DetailedActivity.start_date_local":
+		if e.complexity.DetailedActivity.StartDateLocal == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.StartDateLocal(childComplexity), true
+
+	case "DetailedActivity.start_latlng":
+		if e.complexity.DetailedActivity.StartLatlng == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.StartLatlng(childComplexity), true
+
+	case "DetailedActivity.timezone":
+		if e.complexity.DetailedActivity.Timezone == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.Timezone(childComplexity), true
+
+	case "DetailedActivity.total_elevation_gain":
+		if e.complexity.DetailedActivity.TotalElevationGain == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.TotalElevationGain(childComplexity), true
+
+	case "DetailedActivity.total_photo_count":
+		if e.complexity.DetailedActivity.TotalPhotoCount == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.TotalPhotoCount(childComplexity), true
+
+	case "DetailedActivity.trainer":
+		if e.complexity.DetailedActivity.Trainer == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.Trainer(childComplexity), true
+
+	case "DetailedActivity.type":
+		if e.complexity.DetailedActivity.Type == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.Type(childComplexity), true
+
+	case "DetailedActivity.upload_id":
+		if e.complexity.DetailedActivity.UploadID == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.UploadID(childComplexity), true
+
+	case "DetailedActivity.upload_id_str":
+		if e.complexity.DetailedActivity.UploadIDStr == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.UploadIDStr(childComplexity), true
+
+	case "DetailedActivity.weighted_average_watts":
+		if e.complexity.DetailedActivity.WeightedAverageWatts == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.WeightedAverageWatts(childComplexity), true
+
+	case "DetailedActivity.workout_type":
+		if e.complexity.DetailedActivity.WorkoutType == nil {
+			break
+		}
+
+		return e.complexity.DetailedActivity.WorkoutType(childComplexity), true
+
+	case "DetailedSegmentEffort.activity":
+		if e.complexity.DetailedSegmentEffort.Activity == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.Activity(childComplexity), true
+
+	case "DetailedSegmentEffort.activity_id":
+		if e.complexity.DetailedSegmentEffort.ActivityID == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.ActivityID(childComplexity), true
+
+	case "DetailedSegmentEffort.athlete":
+		if e.complexity.DetailedSegmentEffort.Athlete == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.Athlete(childComplexity), true
+
+	case "DetailedSegmentEffort.average_cadence":
+		if e.complexity.DetailedSegmentEffort.AverageCadence == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.AverageCadence(childComplexity), true
+
+	case "DetailedSegmentEffort.average_heartrate":
+		if e.complexity.DetailedSegmentEffort.AverageHeartrate == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.AverageHeartrate(childComplexity), true
+
+	case "DetailedSegmentEffort.average_watts":
+		if e.complexity.DetailedSegmentEffort.AverageWatts == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.AverageWatts(childComplexity), true
+
+	case "DetailedSegmentEffort.device_watts":
+		if e.complexity.DetailedSegmentEffort.DeviceWatts == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.DeviceWatts(childComplexity), true
+
+	case "DetailedSegmentEffort.distance":
+		if e.complexity.DetailedSegmentEffort.Distance == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.Distance(childComplexity), true
+
+	case "DetailedSegmentEffort.elapsed_time":
+		if e.complexity.DetailedSegmentEffort.ElapsedTime == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.ElapsedTime(childComplexity), true
+
+	case "DetailedSegmentEffort.end_index":
+		if e.complexity.DetailedSegmentEffort.EndIndex == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.EndIndex(childComplexity), true
+
+	case "DetailedSegmentEffort.hidden":
+		if e.complexity.DetailedSegmentEffort.Hidden == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.Hidden(childComplexity), true
+
+	case "DetailedSegmentEffort.id":
+		if e.complexity.DetailedSegmentEffort.ID == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.ID(childComplexity), true
+
+	case "DetailedSegmentEffort.is_kom":
+		if e.complexity.DetailedSegmentEffort.IsKom == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.IsKom(childComplexity), true
+
+	case "DetailedSegmentEffort.kom_rank":
+		if e.complexity.DetailedSegmentEffort.KomRank == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.KomRank(childComplexity), true
+
+	case "DetailedSegmentEffort.max_heartrate":
+		if e.complexity.DetailedSegmentEffort.MaxHeartrate == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.MaxHeartrate(childComplexity), true
+
+	case "DetailedSegmentEffort.moving_time":
+		if e.complexity.DetailedSegmentEffort.MovingTime == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.MovingTime(childComplexity), true
+
+	case "DetailedSegmentEffort.name":
+		if e.complexity.DetailedSegmentEffort.Name == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.Name(childComplexity), true
+
+	case "DetailedSegmentEffort.pr_rank":
+		if e.complexity.DetailedSegmentEffort.PrRank == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.PrRank(childComplexity), true
+
+	case "DetailedSegmentEffort.segment":
+		if e.complexity.DetailedSegmentEffort.Segment == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.Segment(childComplexity), true
+
+	case "DetailedSegmentEffort.start_date":
+		if e.complexity.DetailedSegmentEffort.StartDate == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.StartDate(childComplexity), true
+
+	case "DetailedSegmentEffort.start_date_local":
+		if e.complexity.DetailedSegmentEffort.StartDateLocal == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.StartDateLocal(childComplexity), true
+
+	case "DetailedSegmentEffort.start_index":
+		if e.complexity.DetailedSegmentEffort.StartIndex == nil {
+			break
+		}
+
+		return e.complexity.DetailedSegmentEffort.StartIndex(childComplexity), true
+
+	case "Lap.activity":
+		if e.complexity.Lap.Activity == nil {
+			break
+		}
+
+		return e.complexity.Lap.Activity(childComplexity), true
+
+	case "Lap.athlete":
+		if e.complexity.Lap.Athlete == nil {
+			break
+		}
+
+		return e.complexity.Lap.Athlete(childComplexity), true
+
+	case "Lap.average_cadence":
+		if e.complexity.Lap.AverageCadence == nil {
+			break
+		}
+
+		return e.complexity.Lap.AverageCadence(childComplexity), true
+
+	case "Lap.average_speed":
+		if e.complexity.Lap.AverageSpeed == nil {
+			break
+		}
+
+		return e.complexity.Lap.AverageSpeed(childComplexity), true
+
+	case "Lap.distance":
+		if e.complexity.Lap.Distance == nil {
+			break
+		}
+
+		return e.complexity.Lap.Distance(childComplexity), true
+
+	case "Lap.elapsed_time":
+		if e.complexity.Lap.ElapsedTime == nil {
+			break
+		}
+
+		return e.complexity.Lap.ElapsedTime(childComplexity), true
+
+	case "Lap.end_index":
+		if e.complexity.Lap.EndIndex == nil {
+			break
+		}
+
+		return e.complexity.Lap.EndIndex(childComplexity), true
+
+	case "Lap.id":
+		if e.complexity.Lap.ID == nil {
+			break
+		}
+
+		return e.complexity.Lap.ID(childComplexity), true
+
+	case "Lap.lap_index":
+		if e.complexity.Lap.LapIndex == nil {
+			break
+		}
+
+		return e.complexity.Lap.LapIndex(childComplexity), true
+
+	case "Lap.max_speed":
+		if e.complexity.Lap.MaxSpeed == nil {
+			break
+		}
+
+		return e.complexity.Lap.MaxSpeed(childComplexity), true
+
+	case "Lap.moving_time":
+		if e.complexity.Lap.MovingTime == nil {
+			break
+		}
+
+		return e.complexity.Lap.MovingTime(childComplexity), true
+
+	case "Lap.name":
+		if e.complexity.Lap.Name == nil {
+			break
+		}
+
+		return e.complexity.Lap.Name(childComplexity), true
+
+	case "Lap.pace_zone":
+		if e.complexity.Lap.PaceZone == nil {
+			break
+		}
+
+		return e.complexity.Lap.PaceZone(childComplexity), true
+
+	case "Lap.split":
+		if e.complexity.Lap.Split == nil {
+			break
+		}
+
+		return e.complexity.Lap.Split(childComplexity), true
+
+	case "Lap.start_date":
+		if e.complexity.Lap.StartDate == nil {
+			break
+		}
+
+		return e.complexity.Lap.StartDate(childComplexity), true
+
+	case "Lap.start_date_local":
+		if e.complexity.Lap.StartDateLocal == nil {
+			break
+		}
+
+		return e.complexity.Lap.StartDateLocal(childComplexity), true
+
+	case "Lap.start_index":
+		if e.complexity.Lap.StartIndex == nil {
+			break
+		}
+
+		return e.complexity.Lap.StartIndex(childComplexity), true
+
+	case "Lap.total_elevation_gain":
+		if e.complexity.Lap.TotalElevationGain == nil {
+			break
+		}
+
+		return e.complexity.Lap.TotalElevationGain(childComplexity), true
+
+	case "MetaActivity.id":
+		if e.complexity.MetaActivity.ID == nil {
+			break
+		}
+
+		return e.complexity.MetaActivity.ID(childComplexity), true
+
+	case "MetaAthlete.id":
+		if e.complexity.MetaAthlete.ID == nil {
+			break
+		}
+
+		return e.complexity.MetaAthlete.ID(childComplexity), true
 
 	case "Mutation.addToken":
 		if e.complexity.Mutation.AddToken == nil {
@@ -121,12 +930,379 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AddToken(childComplexity, args["input"].(model.NewAthleteToken)), true
 
+	case "PhotosSummary.count":
+		if e.complexity.PhotosSummary.Count == nil {
+			break
+		}
+
+		return e.complexity.PhotosSummary.Count(childComplexity), true
+
+	case "PhotosSummary.primary":
+		if e.complexity.PhotosSummary.Primary == nil {
+			break
+		}
+
+		return e.complexity.PhotosSummary.Primary(childComplexity), true
+
+	case "PhotosSummaryPrimary.id":
+		if e.complexity.PhotosSummaryPrimary.ID == nil {
+			break
+		}
+
+		return e.complexity.PhotosSummaryPrimary.ID(childComplexity), true
+
+	case "PhotosSummaryPrimary.source":
+		if e.complexity.PhotosSummaryPrimary.Source == nil {
+			break
+		}
+
+		return e.complexity.PhotosSummaryPrimary.Source(childComplexity), true
+
+	case "PhotosSummaryPrimary.unique_id":
+		if e.complexity.PhotosSummaryPrimary.UniqueID == nil {
+			break
+		}
+
+		return e.complexity.PhotosSummaryPrimary.UniqueID(childComplexity), true
+
+	case "PhotosSummaryPrimary.urls":
+		if e.complexity.PhotosSummaryPrimary.Urls == nil {
+			break
+		}
+
+		return e.complexity.PhotosSummaryPrimary.Urls(childComplexity), true
+
+	case "PolylineMap.id":
+		if e.complexity.PolylineMap.ID == nil {
+			break
+		}
+
+		return e.complexity.PolylineMap.ID(childComplexity), true
+
+	case "PolylineMap.polyline":
+		if e.complexity.PolylineMap.Polyline == nil {
+			break
+		}
+
+		return e.complexity.PolylineMap.Polyline(childComplexity), true
+
+	case "PolylineMap.summary_polyline":
+		if e.complexity.PolylineMap.SummaryPolyline == nil {
+			break
+		}
+
+		return e.complexity.PolylineMap.SummaryPolyline(childComplexity), true
+
 	case "Query.activities":
 		if e.complexity.Query.Activities == nil {
 			break
 		}
 
-		return e.complexity.Query.Activities(childComplexity), true
+		args, err := ec.field_Query_activities_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Activities(childComplexity, args["athlete_ids"].([]int64)), true
+
+	case "Query.activity":
+		if e.complexity.Query.Activity == nil {
+			break
+		}
+
+		args, err := ec.field_Query_activity_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Activity(childComplexity, args["id"].(int64)), true
+
+	case "Split.average_speed":
+		if e.complexity.Split.AverageSpeed == nil {
+			break
+		}
+
+		return e.complexity.Split.AverageSpeed(childComplexity), true
+
+	case "Split.distance":
+		if e.complexity.Split.Distance == nil {
+			break
+		}
+
+		return e.complexity.Split.Distance(childComplexity), true
+
+	case "Split.elapsed_time":
+		if e.complexity.Split.ElapsedTime == nil {
+			break
+		}
+
+		return e.complexity.Split.ElapsedTime(childComplexity), true
+
+	case "Split.elevation_difference":
+		if e.complexity.Split.ElevationDifference == nil {
+			break
+		}
+
+		return e.complexity.Split.ElevationDifference(childComplexity), true
+
+	case "Split.moving_time":
+		if e.complexity.Split.MovingTime == nil {
+			break
+		}
+
+		return e.complexity.Split.MovingTime(childComplexity), true
+
+	case "Split.pace_zone":
+		if e.complexity.Split.PaceZone == nil {
+			break
+		}
+
+		return e.complexity.Split.PaceZone(childComplexity), true
+
+	case "Split.split":
+		if e.complexity.Split.Split == nil {
+			break
+		}
+
+		return e.complexity.Split.Split(childComplexity), true
+
+	case "Subscription.activities":
+		if e.complexity.Subscription.Activities == nil {
+			break
+		}
+
+		return e.complexity.Subscription.Activities(childComplexity), true
+
+	case "SummaryGear.distance":
+		if e.complexity.SummaryGear.Distance == nil {
+			break
+		}
+
+		return e.complexity.SummaryGear.Distance(childComplexity), true
+
+	case "SummaryGear.id":
+		if e.complexity.SummaryGear.ID == nil {
+			break
+		}
+
+		return e.complexity.SummaryGear.ID(childComplexity), true
+
+	case "SummaryGear.name":
+		if e.complexity.SummaryGear.Name == nil {
+			break
+		}
+
+		return e.complexity.SummaryGear.Name(childComplexity), true
+
+	case "SummaryGear.primary":
+		if e.complexity.SummaryGear.Primary == nil {
+			break
+		}
+
+		return e.complexity.SummaryGear.Primary(childComplexity), true
+
+	case "SummaryGear.resource_state":
+		if e.complexity.SummaryGear.ResourceState == nil {
+			break
+		}
+
+		return e.complexity.SummaryGear.ResourceState(childComplexity), true
+
+	case "SummaryPrSegmentEffort.effort_count":
+		if e.complexity.SummaryPrSegmentEffort.EffortCount == nil {
+			break
+		}
+
+		return e.complexity.SummaryPrSegmentEffort.EffortCount(childComplexity), true
+
+	case "SummaryPrSegmentEffort.pr_activity_id":
+		if e.complexity.SummaryPrSegmentEffort.PrActivityID == nil {
+			break
+		}
+
+		return e.complexity.SummaryPrSegmentEffort.PrActivityID(childComplexity), true
+
+	case "SummaryPrSegmentEffort.pr_date":
+		if e.complexity.SummaryPrSegmentEffort.PrDate == nil {
+			break
+		}
+
+		return e.complexity.SummaryPrSegmentEffort.PrDate(childComplexity), true
+
+	case "SummaryPrSegmentEffort.pr_elapsed_time":
+		if e.complexity.SummaryPrSegmentEffort.PrElapsedTime == nil {
+			break
+		}
+
+		return e.complexity.SummaryPrSegmentEffort.PrElapsedTime(childComplexity), true
+
+	case "SummarySegment.activity_type":
+		if e.complexity.SummarySegment.ActivityType == nil {
+			break
+		}
+
+		return e.complexity.SummarySegment.ActivityType(childComplexity), true
+
+	case "SummarySegment.athlete_pr_effort":
+		if e.complexity.SummarySegment.AthletePrEffort == nil {
+			break
+		}
+
+		return e.complexity.SummarySegment.AthletePrEffort(childComplexity), true
+
+	case "SummarySegment.athlete_segment_stats":
+		if e.complexity.SummarySegment.AthleteSegmentStats == nil {
+			break
+		}
+
+		return e.complexity.SummarySegment.AthleteSegmentStats(childComplexity), true
+
+	case "SummarySegment.average_grade":
+		if e.complexity.SummarySegment.AverageGrade == nil {
+			break
+		}
+
+		return e.complexity.SummarySegment.AverageGrade(childComplexity), true
+
+	case "SummarySegment.city":
+		if e.complexity.SummarySegment.City == nil {
+			break
+		}
+
+		return e.complexity.SummarySegment.City(childComplexity), true
+
+	case "SummarySegment.climb_category":
+		if e.complexity.SummarySegment.ClimbCategory == nil {
+			break
+		}
+
+		return e.complexity.SummarySegment.ClimbCategory(childComplexity), true
+
+	case "SummarySegment.country":
+		if e.complexity.SummarySegment.Country == nil {
+			break
+		}
+
+		return e.complexity.SummarySegment.Country(childComplexity), true
+
+	case "SummarySegment.distance":
+		if e.complexity.SummarySegment.Distance == nil {
+			break
+		}
+
+		return e.complexity.SummarySegment.Distance(childComplexity), true
+
+	case "SummarySegment.elevation_high":
+		if e.complexity.SummarySegment.ElevationHigh == nil {
+			break
+		}
+
+		return e.complexity.SummarySegment.ElevationHigh(childComplexity), true
+
+	case "SummarySegment.elevation_low":
+		if e.complexity.SummarySegment.ElevationLow == nil {
+			break
+		}
+
+		return e.complexity.SummarySegment.ElevationLow(childComplexity), true
+
+	case "SummarySegment.end_latlng":
+		if e.complexity.SummarySegment.EndLatlng == nil {
+			break
+		}
+
+		return e.complexity.SummarySegment.EndLatlng(childComplexity), true
+
+	case "SummarySegment.id":
+		if e.complexity.SummarySegment.ID == nil {
+			break
+		}
+
+		return e.complexity.SummarySegment.ID(childComplexity), true
+
+	case "SummarySegment.maximum_grade":
+		if e.complexity.SummarySegment.MaximumGrade == nil {
+			break
+		}
+
+		return e.complexity.SummarySegment.MaximumGrade(childComplexity), true
+
+	case "SummarySegment.name":
+		if e.complexity.SummarySegment.Name == nil {
+			break
+		}
+
+		return e.complexity.SummarySegment.Name(childComplexity), true
+
+	case "SummarySegment.private":
+		if e.complexity.SummarySegment.Private == nil {
+			break
+		}
+
+		return e.complexity.SummarySegment.Private(childComplexity), true
+
+	case "SummarySegment.start_latlng":
+		if e.complexity.SummarySegment.StartLatlng == nil {
+			break
+		}
+
+		return e.complexity.SummarySegment.StartLatlng(childComplexity), true
+
+	case "SummarySegment.state":
+		if e.complexity.SummarySegment.State == nil {
+			break
+		}
+
+		return e.complexity.SummarySegment.State(childComplexity), true
+
+	case "SummarySegmentEffort.activity_id":
+		if e.complexity.SummarySegmentEffort.ActivityID == nil {
+			break
+		}
+
+		return e.complexity.SummarySegmentEffort.ActivityID(childComplexity), true
+
+	case "SummarySegmentEffort.distance":
+		if e.complexity.SummarySegmentEffort.Distance == nil {
+			break
+		}
+
+		return e.complexity.SummarySegmentEffort.Distance(childComplexity), true
+
+	case "SummarySegmentEffort.elapsed_time":
+		if e.complexity.SummarySegmentEffort.ElapsedTime == nil {
+			break
+		}
+
+		return e.complexity.SummarySegmentEffort.ElapsedTime(childComplexity), true
+
+	case "SummarySegmentEffort.id":
+		if e.complexity.SummarySegmentEffort.ID == nil {
+			break
+		}
+
+		return e.complexity.SummarySegmentEffort.ID(childComplexity), true
+
+	case "SummarySegmentEffort.is_kom":
+		if e.complexity.SummarySegmentEffort.IsKom == nil {
+			break
+		}
+
+		return e.complexity.SummarySegmentEffort.IsKom(childComplexity), true
+
+	case "SummarySegmentEffort.start_date":
+		if e.complexity.SummarySegmentEffort.StartDate == nil {
+			break
+		}
+
+		return e.complexity.SummarySegmentEffort.StartDate(childComplexity), true
+
+	case "SummarySegmentEffort.start_date_local":
+		if e.complexity.SummarySegmentEffort.StartDateLocal == nil {
+			break
+		}
+
+		return e.complexity.SummarySegmentEffort.StartDateLocal(childComplexity), true
 
 	}
 	return 0, false
@@ -166,6 +1342,23 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 				Data: buf.Bytes(),
 			}
 		}
+	case ast.Subscription:
+		next := ec._Subscription(ctx, rc.Operation.SelectionSet)
+
+		var buf bytes.Buffer
+		return func(ctx context.Context) *graphql.Response {
+			buf.Reset()
+			data := next()
+
+			if data == nil {
+				return nil
+			}
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
+		}
 
 	default:
 		return graphql.OneShot(graphql.ErrorResponse(ctx, "unsupported GraphQL operation"))
@@ -196,30 +1389,212 @@ var sources = []*ast.Source{
 #
 # https://gqlgen.com/getting-started/
 
-scalar Date
+scalar Time
+scalar ActivityType
 
 type DetailedActivity {
   id: ID!
-  distance: Float!
+  external_id: String!
+  upload_id: Int!
+  athlete: MetaAthlete
   name: String!
-  description: String
+  distance: Float!
+  moving_time: Int!
+  elapsed_time: Int!
+  total_elevation_gain: Float!
+  elev_high: Float!
+  elev_low: Float!
+  type: ActivityType
+  start_date: Time!
+  start_date_local: Time!
+  timezone: String!
+  start_latlng: [Float!]
+  end_latlng: [Float!]
+  achievement_count: Int!
+  kudos_count: Int!
+  comment_count: Int!
+  athlete_count: Int!
+  photo_count: Int!
+  total_photo_count: Int!
+  map: PolylineMap
+  trainer: Boolean!
+  commute: Boolean!
+  manual: Boolean!
+  private: Boolean!
+  flagged: Boolean!
+  workout_type: Int!
+  upload_id_str: String!
+  average_speed: Float!
+  max_speed: Float!
+  has_kudoed: Boolean!
+  gear_id: String!
+  kilojoules: Float!
+  average_watts: Float!
+  device_watts: Boolean!
+  max_watts: Int!
+  weighted_average_watts: Int!
+  description: String!
+  photos: PhotosSummary
+  gear: SummaryGear
+  calories: Float!
+  segment_efforts: [DetailedSegmentEffort!]
+  device_name: String!
+  embed_token: String!
+  splits_metric: [Split!]
+  splits_standard: [Split!]
+  laps: [Lap!]
+  best_efforts: [DetailedSegmentEffort!]
 }
 
+type MetaAthlete {
+  id: ID!
+}
+
+type MetaActivity {
+  id: ID!
+}
+
+type PolylineMap {
+  id: String!
+  polyline: String!
+  summary_polyline: String!
+}
+
+type PhotosSummary {
+  count: Int!
+  primary: PhotosSummaryPrimary
+}
+
+type PhotosSummaryPrimary {
+  id: ID!
+  source: Int!
+  unique_id: String!
+  urls: [String!]
+}
+
+type SummaryGear {
+  id: String!
+  resource_state: Int!
+  primary: Boolean!
+  name: String!
+  distance: Float!
+}
+
+type Split {
+  average_speed: Float!
+  distance: Float!
+  elapsed_time: Int!
+  elevation_difference: Float!
+  pace_zone: Int!
+  moving_time: Int!
+  split: Int!
+}
+
+type Lap {
+  id: ID!
+  activity: MetaActivity
+  athlete: MetaAthlete
+  average_cadence: Float!
+  average_speed: Float!
+  distance: Float!
+  elapsed_time: Int!
+  start_index: Int!
+  end_index: Int!
+  lap_index: Int!
+  max_speed: Float!
+  moving_time: Int!
+  name: String!
+  pace_zone: Int!
+  split: Int!
+  start_date: Time!
+  start_date_local: Time!
+  total_elevation_gain: Float!
+}
+
+type DetailedSegmentEffort {
+  id: ID!
+  activity_id: Int!
+  elapsed_time: Int!
+  start_date: Time!
+  start_date_local: Time!
+  distance: Float!
+  is_kom:  Boolean!
+  name: String!
+  activity: MetaActivity
+  athlete: MetaAthlete
+  moving_time: Int!
+  start_index: Int!
+  end_index: Int!
+  average_cadence: Float!
+  average_watts: Float!
+  device_watts: Boolean!
+  average_heartrate: Float!
+  max_heartrate: Float!
+  segment: SummarySegment
+  kom_rank: Int!
+  pr_rank: Int!
+  hidden: Boolean!
+}
+
+type SummarySegment {
+  id: ID!
+  name: String!
+  activity_type: String!
+  distance: Float!
+  average_grade: Float!
+  maximum_grade: Float!
+  elevation_high: Float!
+  elevation_low: Float!
+  start_latlng: [Float!]
+  end_latlng: [Float!]
+  climb_category: Int!
+  city: String!
+  state: String!
+  country: String!
+  private: Boolean!
+  athlete_pr_effort: SummarySegmentEffort
+  athlete_segment_stats: SummaryPrSegmentEffort
+}
+
+type SummarySegmentEffort {
+  id: ID!
+  activity_id: Int!
+  elapsed_time: Int!
+  start_date: Time!
+  start_date_local: Time!
+  distance: Float!
+  is_kom:  Boolean!
+}
+
+type SummaryPrSegmentEffort {
+  pr_activity_id: Int!
+  pr_elapsed_time: Int!
+  pr_date: Time!
+  effort_count: Int!
+}
+
+
+
+
 type Query {
-  activities: [DetailedActivity!]!
+  activity (id: Int!): DetailedActivity
+  activities (athlete_ids: [Int!]): [DetailedActivity!]
 }
 
 input NewAthleteToken {
-  athleteId: Int!
+  athlete_id: Int!
   access: String!
   refresh: String!
-  expired: Date!
+  expired: Time!
 }
 
 type Mutation {
   addToken(input: NewAthleteToken!): Int!
 }
-`, BuiltIn: false},
+
+type Subscription {
+    activities: [DetailedActivity!]!
+}`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -254,6 +1629,36 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_activities_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []int64
+	if tmp, ok := rawArgs["athlete_ids"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("athlete_ids"))
+		arg0, err = ec.unmarshalOInt2ᚕint64ᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["athlete_ids"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_activity_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int64
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNInt2int64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -295,7 +1700,7 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _DetailedActivity_id(ctx context.Context, field graphql.CollectedField, obj *model.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_id(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -325,12 +1730,12 @@ func (ec *executionContext) _DetailedActivity_id(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalNID2int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DetailedActivity_distance(ctx context.Context, field graphql.CollectedField, obj *model.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_external_id(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -348,7 +1753,7 @@ func (ec *executionContext) _DetailedActivity_distance(ctx context.Context, fiel
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Distance, nil
+		return obj.ExternalID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -360,12 +1765,79 @@ func (ec *executionContext) _DetailedActivity_distance(ctx context.Context, fiel
 		}
 		return graphql.Null
 	}
-	res := resTmp.(float64)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DetailedActivity_name(ctx context.Context, field graphql.CollectedField, obj *model.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_upload_id(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UploadID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_athlete(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Athlete, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*strava.MetaAthlete)
+	fc.Result = res
+	return ec.marshalOMetaAthlete2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐMetaAthlete(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_name(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -400,7 +1872,1220 @@ func (ec *executionContext) _DetailedActivity_name(ctx context.Context, field gr
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _DetailedActivity_description(ctx context.Context, field graphql.CollectedField, obj *model.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_distance(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Distance, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_moving_time(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MovingTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_elapsed_time(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ElapsedTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_total_elevation_gain(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalElevationGain, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_elev_high(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ElevHigh, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_elev_low(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ElevLow, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_type(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOActivityType2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_start_date(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartDate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_start_date_local(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartDateLocal, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_timezone(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timezone, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_start_latlng(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartLatlng, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚕfloat64ᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_end_latlng(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EndLatlng, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚕfloat64ᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_achievement_count(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AchievementCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_kudos_count(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.KudosCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_comment_count(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CommentCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_athlete_count(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AthleteCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_photo_count(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PhotoCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_total_photo_count(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalPhotoCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_map(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Map, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*strava.PolylineMap)
+	fc.Result = res
+	return ec.marshalOPolylineMap2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐPolylineMap(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_trainer(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Trainer, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_commute(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Commute, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_manual(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Manual, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_private(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Private, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_flagged(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Flagged, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_workout_type(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WorkoutType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_upload_id_str(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UploadIDStr, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_average_speed(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AverageSpeed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_max_speed(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxSpeed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_has_kudoed(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HasKudoed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_gear_id(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.GearID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_kilojoules(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Kilojoules, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_average_watts(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AverageWatts, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_device_watts(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeviceWatts, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_max_watts(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxWatts, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_weighted_average_watts(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WeightedAverageWatts, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_description(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -425,11 +3110,1798 @@ func (ec *executionContext) _DetailedActivity_description(ctx context.Context, f
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_photos(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Photos, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*strava.PhotosSummary)
+	fc.Result = res
+	return ec.marshalOPhotosSummary2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐPhotosSummary(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_gear(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Gear, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*strava.SummaryGear)
+	fc.Result = res
+	return ec.marshalOSummaryGear2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSummaryGear(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_calories(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Calories, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_segment_efforts(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SegmentEfforts, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*strava.DetailedSegmentEffort)
+	fc.Result = res
+	return ec.marshalODetailedSegmentEffort2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffortᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_device_name(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeviceName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_embed_token(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EmbedToken, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_splits_metric(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SplitsMetric, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*strava.Split)
+	fc.Result = res
+	return ec.marshalOSplit2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplitᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_splits_standard(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SplitsStandard, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*strava.Split)
+	fc.Result = res
+	return ec.marshalOSplit2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplitᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_laps(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Laps, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*strava.Lap)
+	fc.Result = res
+	return ec.marshalOLap2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐLapᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedActivity_best_efforts(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BestEfforts, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*strava.DetailedSegmentEffort)
+	fc.Result = res
+	return ec.marshalODetailedSegmentEffort2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffortᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_id(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNID2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_activity_id(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ActivityID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_elapsed_time(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ElapsedTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_start_date(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartDate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_start_date_local(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartDateLocal, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_distance(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Distance, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_is_kom(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsKom, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_name(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_activity(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Activity, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*strava.MetaActivity)
+	fc.Result = res
+	return ec.marshalOMetaActivity2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐMetaActivity(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_athlete(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Athlete, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*strava.MetaAthlete)
+	fc.Result = res
+	return ec.marshalOMetaAthlete2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐMetaAthlete(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_moving_time(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MovingTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_start_index(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartIndex, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_end_index(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EndIndex, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_average_cadence(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AverageCadence, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_average_watts(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AverageWatts, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_device_watts(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeviceWatts, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_average_heartrate(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AverageHeartrate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_max_heartrate(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxHeartrate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_segment(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Segment, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*strava.SummarySegment)
+	fc.Result = res
+	return ec.marshalOSummarySegment2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSummarySegment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_kom_rank(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.KomRank, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_pr_rank(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PrRank, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DetailedSegmentEffort_hidden(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DetailedSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Hidden, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Lap_id(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Lap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNID2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Lap_activity(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Lap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Activity, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*strava.MetaActivity)
+	fc.Result = res
+	return ec.marshalOMetaActivity2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐMetaActivity(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Lap_athlete(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Lap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Athlete, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*strava.MetaAthlete)
+	fc.Result = res
+	return ec.marshalOMetaAthlete2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐMetaAthlete(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Lap_average_cadence(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Lap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AverageCadence, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Lap_average_speed(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Lap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AverageSpeed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Lap_distance(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Lap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Distance, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Lap_elapsed_time(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Lap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ElapsedTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Lap_start_index(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Lap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartIndex, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Lap_end_index(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Lap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EndIndex, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Lap_lap_index(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Lap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LapIndex, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Lap_max_speed(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Lap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxSpeed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Lap_moving_time(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Lap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MovingTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Lap_name(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Lap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Lap_pace_zone(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Lap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PaceZone, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Lap_split(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Lap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Split, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Lap_start_date(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Lap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartDate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Lap_start_date_local(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Lap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartDateLocal, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Lap_total_elevation_gain(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Lap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalElevationGain, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MetaActivity_id(ctx context.Context, field graphql.CollectedField, obj *strava.MetaActivity) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MetaActivity",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNID2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MetaAthlete_id(ctx context.Context, field graphql.CollectedField, obj *strava.MetaAthlete) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MetaAthlete",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNID2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addToken(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -469,9 +4941,357 @@ func (ec *executionContext) _Mutation_addToken(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PhotosSummary_count(ctx context.Context, field graphql.CollectedField, obj *strava.PhotosSummary) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PhotosSummary",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Count, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PhotosSummary_primary(ctx context.Context, field graphql.CollectedField, obj *strava.PhotosSummary) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PhotosSummary",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Primary, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*strava.PhotosSummaryPrimary)
+	fc.Result = res
+	return ec.marshalOPhotosSummaryPrimary2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐPhotosSummaryPrimary(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PhotosSummaryPrimary_id(ctx context.Context, field graphql.CollectedField, obj *strava.PhotosSummaryPrimary) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PhotosSummaryPrimary",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNID2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PhotosSummaryPrimary_source(ctx context.Context, field graphql.CollectedField, obj *strava.PhotosSummaryPrimary) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PhotosSummaryPrimary",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Source, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PhotosSummaryPrimary_unique_id(ctx context.Context, field graphql.CollectedField, obj *strava.PhotosSummaryPrimary) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PhotosSummaryPrimary",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UniqueID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PhotosSummaryPrimary_urls(ctx context.Context, field graphql.CollectedField, obj *strava.PhotosSummaryPrimary) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PhotosSummaryPrimary",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Urls, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PolylineMap_id(ctx context.Context, field graphql.CollectedField, obj *strava.PolylineMap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PolylineMap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PolylineMap_polyline(ctx context.Context, field graphql.CollectedField, obj *strava.PolylineMap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PolylineMap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Polyline, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PolylineMap_summary_polyline(ctx context.Context, field graphql.CollectedField, obj *strava.PolylineMap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PolylineMap",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SummaryPolyline, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_activity(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_activity_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Activity(rctx, args["id"].(int64))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*strava.DetailedActivity)
+	fc.Result = res
+	return ec.marshalODetailedActivity2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivity(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_activities(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -490,23 +5310,27 @@ func (ec *executionContext) _Query_activities(ctx context.Context, field graphql
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_activities_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Activities(rctx)
+		return ec.resolvers.Query().Activities(rctx, args["athlete_ids"].([]int64))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.DetailedActivity)
+	res := resTmp.([]*strava.DetailedActivity)
 	fc.Result = res
-	return ec.marshalNDetailedActivity2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivityᚄ(ctx, field.Selections, res)
+	return ec.marshalODetailedActivity2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivityᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -578,6 +5402,1439 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Split_average_speed(ctx context.Context, field graphql.CollectedField, obj *strava.Split) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Split",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AverageSpeed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Split_distance(ctx context.Context, field graphql.CollectedField, obj *strava.Split) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Split",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Distance, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Split_elapsed_time(ctx context.Context, field graphql.CollectedField, obj *strava.Split) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Split",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ElapsedTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Split_elevation_difference(ctx context.Context, field graphql.CollectedField, obj *strava.Split) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Split",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ElevationDifference, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Split_pace_zone(ctx context.Context, field graphql.CollectedField, obj *strava.Split) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Split",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PaceZone, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Split_moving_time(ctx context.Context, field graphql.CollectedField, obj *strava.Split) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Split",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MovingTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Split_split(ctx context.Context, field graphql.CollectedField, obj *strava.Split) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Split",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Split, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Subscription_activities(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Subscription",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().Activities(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-resTmp.(<-chan []*strava.DetailedActivity)
+		if !ok {
+			return nil
+		}
+		return graphql.WriterFunc(func(w io.Writer) {
+			w.Write([]byte{'{'})
+			graphql.MarshalString(field.Alias).MarshalGQL(w)
+			w.Write([]byte{':'})
+			ec.marshalNDetailedActivity2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivityᚄ(ctx, field.Selections, res).MarshalGQL(w)
+			w.Write([]byte{'}'})
+		})
+	}
+}
+
+func (ec *executionContext) _SummaryGear_id(ctx context.Context, field graphql.CollectedField, obj *strava.SummaryGear) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummaryGear",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummaryGear_resource_state(ctx context.Context, field graphql.CollectedField, obj *strava.SummaryGear) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummaryGear",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ResourceState, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummaryGear_primary(ctx context.Context, field graphql.CollectedField, obj *strava.SummaryGear) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummaryGear",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Primary, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummaryGear_name(ctx context.Context, field graphql.CollectedField, obj *strava.SummaryGear) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummaryGear",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummaryGear_distance(ctx context.Context, field graphql.CollectedField, obj *strava.SummaryGear) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummaryGear",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Distance, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummaryPrSegmentEffort_pr_activity_id(ctx context.Context, field graphql.CollectedField, obj *strava.SummaryPrSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummaryPrSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PrActivityID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummaryPrSegmentEffort_pr_elapsed_time(ctx context.Context, field graphql.CollectedField, obj *strava.SummaryPrSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummaryPrSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PrElapsedTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummaryPrSegmentEffort_pr_date(ctx context.Context, field graphql.CollectedField, obj *strava.SummaryPrSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummaryPrSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PrDate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummaryPrSegmentEffort_effort_count(ctx context.Context, field graphql.CollectedField, obj *strava.SummaryPrSegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummaryPrSegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EffortCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegment_id(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNID2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegment_name(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegment_activity_type(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ActivityType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegment_distance(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Distance, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegment_average_grade(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AverageGrade, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegment_maximum_grade(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaximumGrade, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegment_elevation_high(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ElevationHigh, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegment_elevation_low(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ElevationLow, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegment_start_latlng(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartLatlng, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚕfloat64ᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegment_end_latlng(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EndLatlng, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚕfloat64ᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegment_climb_category(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClimbCategory, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegment_city(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.City, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegment_state(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.State, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegment_country(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Country, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegment_private(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Private, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegment_athlete_pr_effort(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AthletePrEffort, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*strava.SummarySegmentEffort)
+	fc.Result = res
+	return ec.marshalOSummarySegmentEffort2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSummarySegmentEffort(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegment_athlete_segment_stats(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AthleteSegmentStats, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*strava.SummaryPrSegmentEffort)
+	fc.Result = res
+	return ec.marshalOSummaryPrSegmentEffort2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSummaryPrSegmentEffort(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegmentEffort_id(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNID2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegmentEffort_activity_id(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ActivityID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegmentEffort_elapsed_time(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ElapsedTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegmentEffort_start_date(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartDate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegmentEffort_start_date_local(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartDateLocal, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegmentEffort_distance(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Distance, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SummarySegmentEffort_is_kom(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegmentEffort) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SummarySegmentEffort",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsKom, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -1711,11 +7968,11 @@ func (ec *executionContext) unmarshalInputNewAthleteToken(ctx context.Context, o
 
 	for k, v := range asMap {
 		switch k {
-		case "athleteId":
+		case "athlete_id":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("athleteId"))
-			it.AthleteID, err = ec.unmarshalNInt2int(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("athlete_id"))
+			it.AthleteID, err = ec.unmarshalNInt2int64(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -1739,7 +7996,7 @@ func (ec *executionContext) unmarshalInputNewAthleteToken(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expired"))
-			it.Expired, err = ec.unmarshalNDate2string(ctx, v)
+			it.Expired, err = ec.unmarshalNTime2timeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -1759,7 +8016,7 @@ func (ec *executionContext) unmarshalInputNewAthleteToken(ctx context.Context, o
 
 var detailedActivityImplementors = []string{"DetailedActivity"}
 
-func (ec *executionContext) _DetailedActivity(ctx context.Context, sel ast.SelectionSet, obj *model.DetailedActivity) graphql.Marshaler {
+func (ec *executionContext) _DetailedActivity(ctx context.Context, sel ast.SelectionSet, obj *strava.DetailedActivity) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, detailedActivityImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -1773,18 +8030,503 @@ func (ec *executionContext) _DetailedActivity(ctx context.Context, sel ast.Selec
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "distance":
-			out.Values[i] = ec._DetailedActivity_distance(ctx, field, obj)
+		case "external_id":
+			out.Values[i] = ec._DetailedActivity_external_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "upload_id":
+			out.Values[i] = ec._DetailedActivity_upload_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "athlete":
+			out.Values[i] = ec._DetailedActivity_athlete(ctx, field, obj)
 		case "name":
 			out.Values[i] = ec._DetailedActivity_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "distance":
+			out.Values[i] = ec._DetailedActivity_distance(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "moving_time":
+			out.Values[i] = ec._DetailedActivity_moving_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "elapsed_time":
+			out.Values[i] = ec._DetailedActivity_elapsed_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "total_elevation_gain":
+			out.Values[i] = ec._DetailedActivity_total_elevation_gain(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "elev_high":
+			out.Values[i] = ec._DetailedActivity_elev_high(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "elev_low":
+			out.Values[i] = ec._DetailedActivity_elev_low(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "type":
+			out.Values[i] = ec._DetailedActivity_type(ctx, field, obj)
+		case "start_date":
+			out.Values[i] = ec._DetailedActivity_start_date(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "start_date_local":
+			out.Values[i] = ec._DetailedActivity_start_date_local(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "timezone":
+			out.Values[i] = ec._DetailedActivity_timezone(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "start_latlng":
+			out.Values[i] = ec._DetailedActivity_start_latlng(ctx, field, obj)
+		case "end_latlng":
+			out.Values[i] = ec._DetailedActivity_end_latlng(ctx, field, obj)
+		case "achievement_count":
+			out.Values[i] = ec._DetailedActivity_achievement_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "kudos_count":
+			out.Values[i] = ec._DetailedActivity_kudos_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "comment_count":
+			out.Values[i] = ec._DetailedActivity_comment_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "athlete_count":
+			out.Values[i] = ec._DetailedActivity_athlete_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "photo_count":
+			out.Values[i] = ec._DetailedActivity_photo_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "total_photo_count":
+			out.Values[i] = ec._DetailedActivity_total_photo_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "map":
+			out.Values[i] = ec._DetailedActivity_map(ctx, field, obj)
+		case "trainer":
+			out.Values[i] = ec._DetailedActivity_trainer(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "commute":
+			out.Values[i] = ec._DetailedActivity_commute(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "manual":
+			out.Values[i] = ec._DetailedActivity_manual(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "private":
+			out.Values[i] = ec._DetailedActivity_private(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "flagged":
+			out.Values[i] = ec._DetailedActivity_flagged(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "workout_type":
+			out.Values[i] = ec._DetailedActivity_workout_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "upload_id_str":
+			out.Values[i] = ec._DetailedActivity_upload_id_str(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "average_speed":
+			out.Values[i] = ec._DetailedActivity_average_speed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "max_speed":
+			out.Values[i] = ec._DetailedActivity_max_speed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "has_kudoed":
+			out.Values[i] = ec._DetailedActivity_has_kudoed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "gear_id":
+			out.Values[i] = ec._DetailedActivity_gear_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "kilojoules":
+			out.Values[i] = ec._DetailedActivity_kilojoules(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "average_watts":
+			out.Values[i] = ec._DetailedActivity_average_watts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "device_watts":
+			out.Values[i] = ec._DetailedActivity_device_watts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "max_watts":
+			out.Values[i] = ec._DetailedActivity_max_watts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "weighted_average_watts":
+			out.Values[i] = ec._DetailedActivity_weighted_average_watts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "description":
 			out.Values[i] = ec._DetailedActivity_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "photos":
+			out.Values[i] = ec._DetailedActivity_photos(ctx, field, obj)
+		case "gear":
+			out.Values[i] = ec._DetailedActivity_gear(ctx, field, obj)
+		case "calories":
+			out.Values[i] = ec._DetailedActivity_calories(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "segment_efforts":
+			out.Values[i] = ec._DetailedActivity_segment_efforts(ctx, field, obj)
+		case "device_name":
+			out.Values[i] = ec._DetailedActivity_device_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "embed_token":
+			out.Values[i] = ec._DetailedActivity_embed_token(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "splits_metric":
+			out.Values[i] = ec._DetailedActivity_splits_metric(ctx, field, obj)
+		case "splits_standard":
+			out.Values[i] = ec._DetailedActivity_splits_standard(ctx, field, obj)
+		case "laps":
+			out.Values[i] = ec._DetailedActivity_laps(ctx, field, obj)
+		case "best_efforts":
+			out.Values[i] = ec._DetailedActivity_best_efforts(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var detailedSegmentEffortImplementors = []string{"DetailedSegmentEffort"}
+
+func (ec *executionContext) _DetailedSegmentEffort(ctx context.Context, sel ast.SelectionSet, obj *strava.DetailedSegmentEffort) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, detailedSegmentEffortImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DetailedSegmentEffort")
+		case "id":
+			out.Values[i] = ec._DetailedSegmentEffort_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "activity_id":
+			out.Values[i] = ec._DetailedSegmentEffort_activity_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "elapsed_time":
+			out.Values[i] = ec._DetailedSegmentEffort_elapsed_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "start_date":
+			out.Values[i] = ec._DetailedSegmentEffort_start_date(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "start_date_local":
+			out.Values[i] = ec._DetailedSegmentEffort_start_date_local(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "distance":
+			out.Values[i] = ec._DetailedSegmentEffort_distance(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "is_kom":
+			out.Values[i] = ec._DetailedSegmentEffort_is_kom(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._DetailedSegmentEffort_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "activity":
+			out.Values[i] = ec._DetailedSegmentEffort_activity(ctx, field, obj)
+		case "athlete":
+			out.Values[i] = ec._DetailedSegmentEffort_athlete(ctx, field, obj)
+		case "moving_time":
+			out.Values[i] = ec._DetailedSegmentEffort_moving_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "start_index":
+			out.Values[i] = ec._DetailedSegmentEffort_start_index(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "end_index":
+			out.Values[i] = ec._DetailedSegmentEffort_end_index(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "average_cadence":
+			out.Values[i] = ec._DetailedSegmentEffort_average_cadence(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "average_watts":
+			out.Values[i] = ec._DetailedSegmentEffort_average_watts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "device_watts":
+			out.Values[i] = ec._DetailedSegmentEffort_device_watts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "average_heartrate":
+			out.Values[i] = ec._DetailedSegmentEffort_average_heartrate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "max_heartrate":
+			out.Values[i] = ec._DetailedSegmentEffort_max_heartrate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "segment":
+			out.Values[i] = ec._DetailedSegmentEffort_segment(ctx, field, obj)
+		case "kom_rank":
+			out.Values[i] = ec._DetailedSegmentEffort_kom_rank(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pr_rank":
+			out.Values[i] = ec._DetailedSegmentEffort_pr_rank(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "hidden":
+			out.Values[i] = ec._DetailedSegmentEffort_hidden(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var lapImplementors = []string{"Lap"}
+
+func (ec *executionContext) _Lap(ctx context.Context, sel ast.SelectionSet, obj *strava.Lap) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, lapImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Lap")
+		case "id":
+			out.Values[i] = ec._Lap_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "activity":
+			out.Values[i] = ec._Lap_activity(ctx, field, obj)
+		case "athlete":
+			out.Values[i] = ec._Lap_athlete(ctx, field, obj)
+		case "average_cadence":
+			out.Values[i] = ec._Lap_average_cadence(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "average_speed":
+			out.Values[i] = ec._Lap_average_speed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "distance":
+			out.Values[i] = ec._Lap_distance(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "elapsed_time":
+			out.Values[i] = ec._Lap_elapsed_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "start_index":
+			out.Values[i] = ec._Lap_start_index(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "end_index":
+			out.Values[i] = ec._Lap_end_index(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "lap_index":
+			out.Values[i] = ec._Lap_lap_index(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "max_speed":
+			out.Values[i] = ec._Lap_max_speed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "moving_time":
+			out.Values[i] = ec._Lap_moving_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._Lap_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pace_zone":
+			out.Values[i] = ec._Lap_pace_zone(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "split":
+			out.Values[i] = ec._Lap_split(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "start_date":
+			out.Values[i] = ec._Lap_start_date(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "start_date_local":
+			out.Values[i] = ec._Lap_start_date_local(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "total_elevation_gain":
+			out.Values[i] = ec._Lap_total_elevation_gain(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var metaActivityImplementors = []string{"MetaActivity"}
+
+func (ec *executionContext) _MetaActivity(ctx context.Context, sel ast.SelectionSet, obj *strava.MetaActivity) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, metaActivityImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MetaActivity")
+		case "id":
+			out.Values[i] = ec._MetaActivity_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var metaAthleteImplementors = []string{"MetaAthlete"}
+
+func (ec *executionContext) _MetaAthlete(ctx context.Context, sel ast.SelectionSet, obj *strava.MetaAthlete) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, metaAthleteImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MetaAthlete")
+		case "id":
+			out.Values[i] = ec._MetaAthlete_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -1827,6 +8569,111 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	return out
 }
 
+var photosSummaryImplementors = []string{"PhotosSummary"}
+
+func (ec *executionContext) _PhotosSummary(ctx context.Context, sel ast.SelectionSet, obj *strava.PhotosSummary) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, photosSummaryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PhotosSummary")
+		case "count":
+			out.Values[i] = ec._PhotosSummary_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "primary":
+			out.Values[i] = ec._PhotosSummary_primary(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var photosSummaryPrimaryImplementors = []string{"PhotosSummaryPrimary"}
+
+func (ec *executionContext) _PhotosSummaryPrimary(ctx context.Context, sel ast.SelectionSet, obj *strava.PhotosSummaryPrimary) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, photosSummaryPrimaryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PhotosSummaryPrimary")
+		case "id":
+			out.Values[i] = ec._PhotosSummaryPrimary_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "source":
+			out.Values[i] = ec._PhotosSummaryPrimary_source(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "unique_id":
+			out.Values[i] = ec._PhotosSummaryPrimary_unique_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "urls":
+			out.Values[i] = ec._PhotosSummaryPrimary_urls(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var polylineMapImplementors = []string{"PolylineMap"}
+
+func (ec *executionContext) _PolylineMap(ctx context.Context, sel ast.SelectionSet, obj *strava.PolylineMap) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, polylineMapImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PolylineMap")
+		case "id":
+			out.Values[i] = ec._PolylineMap_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "polyline":
+			out.Values[i] = ec._PolylineMap_polyline(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "summary_polyline":
+			out.Values[i] = ec._PolylineMap_summary_polyline(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -1842,6 +8689,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "activity":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_activity(ctx, field)
+				return res
+			})
 		case "activities":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -1851,15 +8709,330 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_activities(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
 			out.Values[i] = ec._Query___schema(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var splitImplementors = []string{"Split"}
+
+func (ec *executionContext) _Split(ctx context.Context, sel ast.SelectionSet, obj *strava.Split) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, splitImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Split")
+		case "average_speed":
+			out.Values[i] = ec._Split_average_speed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "distance":
+			out.Values[i] = ec._Split_distance(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "elapsed_time":
+			out.Values[i] = ec._Split_elapsed_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "elevation_difference":
+			out.Values[i] = ec._Split_elevation_difference(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pace_zone":
+			out.Values[i] = ec._Split_pace_zone(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "moving_time":
+			out.Values[i] = ec._Split_moving_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "split":
+			out.Values[i] = ec._Split_split(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var subscriptionImplementors = []string{"Subscription"}
+
+func (ec *executionContext) _Subscription(ctx context.Context, sel ast.SelectionSet) func() graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, subscriptionImplementors)
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Subscription",
+	})
+	if len(fields) != 1 {
+		ec.Errorf(ctx, "must subscribe to exactly one stream")
+		return nil
+	}
+
+	switch fields[0].Name {
+	case "activities":
+		return ec._Subscription_activities(ctx, fields[0])
+	default:
+		panic("unknown field " + strconv.Quote(fields[0].Name))
+	}
+}
+
+var summaryGearImplementors = []string{"SummaryGear"}
+
+func (ec *executionContext) _SummaryGear(ctx context.Context, sel ast.SelectionSet, obj *strava.SummaryGear) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, summaryGearImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SummaryGear")
+		case "id":
+			out.Values[i] = ec._SummaryGear_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "resource_state":
+			out.Values[i] = ec._SummaryGear_resource_state(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "primary":
+			out.Values[i] = ec._SummaryGear_primary(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._SummaryGear_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "distance":
+			out.Values[i] = ec._SummaryGear_distance(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var summaryPrSegmentEffortImplementors = []string{"SummaryPrSegmentEffort"}
+
+func (ec *executionContext) _SummaryPrSegmentEffort(ctx context.Context, sel ast.SelectionSet, obj *strava.SummaryPrSegmentEffort) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, summaryPrSegmentEffortImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SummaryPrSegmentEffort")
+		case "pr_activity_id":
+			out.Values[i] = ec._SummaryPrSegmentEffort_pr_activity_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pr_elapsed_time":
+			out.Values[i] = ec._SummaryPrSegmentEffort_pr_elapsed_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pr_date":
+			out.Values[i] = ec._SummaryPrSegmentEffort_pr_date(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "effort_count":
+			out.Values[i] = ec._SummaryPrSegmentEffort_effort_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var summarySegmentImplementors = []string{"SummarySegment"}
+
+func (ec *executionContext) _SummarySegment(ctx context.Context, sel ast.SelectionSet, obj *strava.SummarySegment) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, summarySegmentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SummarySegment")
+		case "id":
+			out.Values[i] = ec._SummarySegment_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._SummarySegment_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "activity_type":
+			out.Values[i] = ec._SummarySegment_activity_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "distance":
+			out.Values[i] = ec._SummarySegment_distance(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "average_grade":
+			out.Values[i] = ec._SummarySegment_average_grade(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "maximum_grade":
+			out.Values[i] = ec._SummarySegment_maximum_grade(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "elevation_high":
+			out.Values[i] = ec._SummarySegment_elevation_high(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "elevation_low":
+			out.Values[i] = ec._SummarySegment_elevation_low(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "start_latlng":
+			out.Values[i] = ec._SummarySegment_start_latlng(ctx, field, obj)
+		case "end_latlng":
+			out.Values[i] = ec._SummarySegment_end_latlng(ctx, field, obj)
+		case "climb_category":
+			out.Values[i] = ec._SummarySegment_climb_category(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "city":
+			out.Values[i] = ec._SummarySegment_city(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "state":
+			out.Values[i] = ec._SummarySegment_state(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "country":
+			out.Values[i] = ec._SummarySegment_country(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "private":
+			out.Values[i] = ec._SummarySegment_private(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "athlete_pr_effort":
+			out.Values[i] = ec._SummarySegment_athlete_pr_effort(ctx, field, obj)
+		case "athlete_segment_stats":
+			out.Values[i] = ec._SummarySegment_athlete_segment_stats(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var summarySegmentEffortImplementors = []string{"SummarySegmentEffort"}
+
+func (ec *executionContext) _SummarySegmentEffort(ctx context.Context, sel ast.SelectionSet, obj *strava.SummarySegmentEffort) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, summarySegmentEffortImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SummarySegmentEffort")
+		case "id":
+			out.Values[i] = ec._SummarySegmentEffort_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "activity_id":
+			out.Values[i] = ec._SummarySegmentEffort_activity_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "elapsed_time":
+			out.Values[i] = ec._SummarySegmentEffort_elapsed_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "start_date":
+			out.Values[i] = ec._SummarySegmentEffort_start_date(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "start_date_local":
+			out.Values[i] = ec._SummarySegmentEffort_start_date_local(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "distance":
+			out.Values[i] = ec._SummarySegmentEffort_distance(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "is_kom":
+			out.Values[i] = ec._SummarySegmentEffort_is_kom(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2136,22 +9309,7 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) unmarshalNDate2string(ctx context.Context, v interface{}) (string, error) {
-	res, err := graphql.UnmarshalString(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNDate2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	res := graphql.MarshalString(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
-func (ec *executionContext) marshalNDetailedActivity2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivityᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.DetailedActivity) graphql.Marshaler {
+func (ec *executionContext) marshalNDetailedActivity2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivityᚄ(ctx context.Context, sel ast.SelectionSet, v []*strava.DetailedActivity) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -2195,7 +9353,7 @@ func (ec *executionContext) marshalNDetailedActivity2ᚕᚖsealwayᚑstravaᚋgr
 	return ret
 }
 
-func (ec *executionContext) marshalNDetailedActivity2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivity(ctx context.Context, sel ast.SelectionSet, v *model.DetailedActivity) graphql.Marshaler {
+func (ec *executionContext) marshalNDetailedActivity2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivity(ctx context.Context, sel ast.SelectionSet, v *strava.DetailedActivity) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -2203,6 +9361,16 @@ func (ec *executionContext) marshalNDetailedActivity2ᚖsealwayᚑstravaᚋgraph
 		return graphql.Null
 	}
 	return ec._DetailedActivity(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNDetailedSegmentEffort2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffort(ctx context.Context, sel ast.SelectionSet, v *strava.DetailedSegmentEffort) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._DetailedSegmentEffort(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
@@ -2220,13 +9388,13 @@ func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
-	res, err := graphql.UnmarshalID(v)
+func (ec *executionContext) unmarshalNID2int64(ctx context.Context, v interface{}) (int64, error) {
+	res, err := graphql.UnmarshalInt64(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	res := graphql.MarshalID(v)
+func (ec *executionContext) marshalNID2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
+	res := graphql.MarshalInt64(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -2235,24 +9403,44 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
-func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
-	res, err := graphql.UnmarshalInt(v)
+func (ec *executionContext) unmarshalNInt2int64(ctx context.Context, v interface{}) (int64, error) {
+	res, err := graphql.UnmarshalInt64(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
-	res := graphql.MarshalInt(v)
+func (ec *executionContext) marshalNInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
+	res := graphql.MarshalInt64(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNLap2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐLap(ctx context.Context, sel ast.SelectionSet, v *strava.Lap) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Lap(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNNewAthleteToken2sealwayᚑstravaᚋgraphᚋmodelᚐNewAthleteToken(ctx context.Context, v interface{}) (model.NewAthleteToken, error) {
 	res, err := ec.unmarshalInputNewAthleteToken(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNSplit2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplit(ctx context.Context, sel ast.SelectionSet, v *strava.Split) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Split(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -2262,6 +9450,21 @@ func (ec *executionContext) unmarshalNString2string(ctx context.Context, v inter
 
 func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	res := graphql.MarshalString(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
+	res, err := graphql.UnmarshalTime(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
+	res := graphql.MarshalTime(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -2527,6 +9730,21 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
+func (ec *executionContext) unmarshalOActivityType2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalString(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOActivityType2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*v)
+}
+
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -2551,6 +9769,320 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return graphql.MarshalBoolean(*v)
 }
 
+func (ec *executionContext) marshalODetailedActivity2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivityᚄ(ctx context.Context, sel ast.SelectionSet, v []*strava.DetailedActivity) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNDetailedActivity2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivity(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalODetailedActivity2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivity(ctx context.Context, sel ast.SelectionSet, v *strava.DetailedActivity) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DetailedActivity(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalODetailedSegmentEffort2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffortᚄ(ctx context.Context, sel ast.SelectionSet, v []*strava.DetailedSegmentEffort) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNDetailedSegmentEffort2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffort(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOFloat2ᚕfloat64ᚄ(ctx context.Context, v interface{}) ([]float64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]float64, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNFloat2float64(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOFloat2ᚕfloat64ᚄ(ctx context.Context, sel ast.SelectionSet, v []float64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNFloat2float64(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOInt2ᚕint64ᚄ(ctx context.Context, v interface{}) ([]int64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]int64, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNInt2int64(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOInt2ᚕint64ᚄ(ctx context.Context, sel ast.SelectionSet, v []int64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNInt2int64(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOLap2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐLapᚄ(ctx context.Context, sel ast.SelectionSet, v []*strava.Lap) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLap2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐLap(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOMetaActivity2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐMetaActivity(ctx context.Context, sel ast.SelectionSet, v *strava.MetaActivity) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MetaActivity(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOMetaAthlete2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐMetaAthlete(ctx context.Context, sel ast.SelectionSet, v *strava.MetaAthlete) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MetaAthlete(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOPhotosSummary2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐPhotosSummary(ctx context.Context, sel ast.SelectionSet, v *strava.PhotosSummary) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PhotosSummary(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOPhotosSummaryPrimary2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐPhotosSummaryPrimary(ctx context.Context, sel ast.SelectionSet, v *strava.PhotosSummaryPrimary) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PhotosSummaryPrimary(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOPolylineMap2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐPolylineMap(ctx context.Context, sel ast.SelectionSet, v *strava.PolylineMap) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PolylineMap(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOSplit2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplitᚄ(ctx context.Context, sel ast.SelectionSet, v []*strava.Split) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNSplit2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplit(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -2558,6 +10090,48 @@ func (ec *executionContext) unmarshalOString2string(ctx context.Context, v inter
 
 func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	return graphql.MarshalString(v)
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
@@ -2573,6 +10147,34 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 		return graphql.Null
 	}
 	return graphql.MarshalString(*v)
+}
+
+func (ec *executionContext) marshalOSummaryGear2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSummaryGear(ctx context.Context, sel ast.SelectionSet, v *strava.SummaryGear) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._SummaryGear(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOSummaryPrSegmentEffort2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSummaryPrSegmentEffort(ctx context.Context, sel ast.SelectionSet, v *strava.SummaryPrSegmentEffort) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._SummaryPrSegmentEffort(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOSummarySegment2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSummarySegment(ctx context.Context, sel ast.SelectionSet, v *strava.SummarySegment) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._SummarySegment(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOSummarySegmentEffort2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSummarySegmentEffort(ctx context.Context, sel ast.SelectionSet, v *strava.SummarySegmentEffort) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._SummarySegmentEffort(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

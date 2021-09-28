@@ -10,8 +10,8 @@
 package strava
 
 type PhotosSummaryPrimary struct {
-	Id       int64             `bson:"id" json:"id,omitempty"`
-	Source   int32             `bson:"source" json:"source,omitempty"`
-	UniqueId string            `bson:"unique_id" json:"unique_id,omitempty"`
+	ID       int64             `bson:"id" json:"id,omitempty"`
+	Source   int64             `bson:"source" json:"source,omitempty"`
+	UniqueID string            `bson:"unique_id" json:"unique_id,omitempty"`
 	Urls     map[string]string `bson:"urls" json:"urls,omitempty"`
 }

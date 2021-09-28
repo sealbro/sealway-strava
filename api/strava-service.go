@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/antihax/optional"
 	"net/http"
 	"sealway-strava/strava"
 )
@@ -18,7 +19,9 @@ type StravaService struct {
 func (service *StravaService) GetActivityById(token string, activityId int64) (*strava.DetailedActivity, error) {
 	auth := context.WithValue(context.Background(), strava.ContextAccessToken, token)
 
-	activity, _, err := service.StravaClient.ActivitiesApi.GetActivityById(auth, activityId, nil)
+	activity, _, err := service.StravaClient.ActivitiesApi.GetActivityById(auth, activityId, &strava.ActivitiesApiGetActivityByIdOpts{
+		IncludeAllEfforts: optional.NewBool(true),
+	})
 
 	if err != nil {
 		return nil, fmt.Errorf("can't get activity %d : %w", activityId, err)

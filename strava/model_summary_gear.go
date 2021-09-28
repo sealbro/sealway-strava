@@ -11,13 +11,13 @@ package strava
 
 type SummaryGear struct {
 	// The gear's unique identifier.
-	Id string `bson:"id" json:"id,omitempty"`
+	ID string `bson:"id" json:"id,omitempty"`
 	// Resource state, indicates level of detail. Possible values: 2 -> \"summary\", 3 -> \"detail\"
-	ResourceState int32 `bson:"resource_state" json:"resource_state,omitempty"`
+	ResourceState int64 `bson:"resource_state" json:"resource_state,omitempty"`
 	// Whether this gear's is the owner's default one.
 	Primary bool `bson:"primary" json:"primary,omitempty"`
 	// The gear's name.
 	Name string `bson:"name" json:"name,omitempty"`
 	// The distance logged with this gear.
-	Distance float32 `bson:"distance" json:"distance,omitempty"`
+	Distance float64 `bson:"distance" json:"distance,omitempty"`
 }

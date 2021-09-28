@@ -15,36 +15,36 @@ import (
 
 type Lap struct {
 	// The unique identifier of this lap
-	Id       int64         `bson:"id" json:"id,omitempty"`
+	ID       int64         `bson:"id" json:"id,omitempty"`
 	Activity *MetaActivity `bson:"activity" json:"activity,omitempty"`
 	Athlete  *MetaAthlete  `bson:"athlete" json:"athlete,omitempty"`
 	// The lap's average cadence
-	AverageCadence float32 `bson:"average_cadence" json:"average_cadence,omitempty"`
+	AverageCadence float64 `bson:"average_cadence" json:"average_cadence,omitempty"`
 	// The lap's average speed
-	AverageSpeed float32 `bson:"average_speed" json:"average_speed,omitempty"`
+	AverageSpeed float64 `bson:"average_speed" json:"average_speed,omitempty"`
 	// The lap's distance, in meters
-	Distance float32 `bson:"distance" json:"distance,omitempty"`
+	Distance float64 `bson:"distance" json:"distance,omitempty"`
 	// The lap's elapsed time, in seconds
-	ElapsedTime int32 `bson:"elapsed_time" json:"elapsed_time,omitempty"`
+	ElapsedTime int64 `bson:"elapsed_time" json:"elapsed_time,omitempty"`
 	// The start index of this effort in its activity's stream
-	StartIndex int32 `bson:"start_index" json:"start_index,omitempty"`
+	StartIndex int64 `bson:"start_index" json:"start_index,omitempty"`
 	// The end index of this effort in its activity's stream
-	EndIndex int32 `bson:"end_index" json:"end_index,omitempty"`
+	EndIndex int64 `bson:"end_index" json:"end_index,omitempty"`
 	// The index of this lap in the activity it belongs to
-	LapIndex int32 `bson:"lap_index" json:"lap_index,omitempty"`
+	LapIndex int64 `bson:"lap_index" json:"lap_index,omitempty"`
 	// The maximum speed of this lat, in meters per second
-	MaxSpeed float32 `bson:"max_speed" json:"max_speed,omitempty"`
+	MaxSpeed float64 `bson:"max_speed" json:"max_speed,omitempty"`
 	// The lap's moving time, in seconds
-	MovingTime int32 `bson:"moving_time" json:"moving_time,omitempty"`
+	MovingTime int64 `bson:"moving_time" json:"moving_time,omitempty"`
 	// The name of the lap
 	Name string `bson:"name" json:"name,omitempty"`
 	// The athlete's pace zone during this lap
-	PaceZone int32 `bson:"pace_zone" json:"pace_zone,omitempty"`
-	Split    int32 `bson:"split" json:"split,omitempty"`
+	PaceZone int64 `bson:"pace_zone" json:"pace_zone,omitempty"`
+	Split    int64 `bson:"split" json:"split,omitempty"`
 	// The time at which the lap was started.
 	StartDate time.Time `bson:"start_date" json:"start_date,omitempty"`
 	// The time at which the lap was started in the local timezone.
 	StartDateLocal time.Time `bson:"start_date_local" json:"start_date_local,omitempty"`
 	// The elevation gain of this lap, in meters
-	TotalElevationGain float32 `bson:"total_elevation_gain" json:"total_elevation_gain,omitempty"`
+	TotalElevationGain float64 `bson:"total_elevation_gain" json:"total_elevation_gain,omitempty"`
 }

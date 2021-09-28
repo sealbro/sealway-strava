@@ -11,17 +11,17 @@ package strava
 
 type Split struct {
 	// The average speed of this split, in meters per second
-	AverageSpeed float32 `bson:"average_speed" json:"average_speed,omitempty"`
+	AverageSpeed float64 `bson:"average_speed" json:"average_speed,omitempty"`
 	// The distance of this split, in meters
-	Distance float32 `bson:"distance" json:"distance,omitempty"`
+	Distance float64 `bson:"distance" json:"distance,omitempty"`
 	// The elapsed time of this split, in seconds
-	ElapsedTime int32 `bson:"elapsed_time" json:"elapsed_time,omitempty"`
+	ElapsedTime int64 `bson:"elapsed_time" json:"elapsed_time,omitempty"`
 	// The elevation difference of this split, in meters
-	ElevationDifference float32 `bson:"elevation_difference" json:"elevation_difference,omitempty"`
+	ElevationDifference float64 `bson:"elevation_difference" json:"elevation_difference,omitempty"`
 	// The pacing zone of this split
-	PaceZone int32 `bson:"pace_zone" json:"pace_zone,omitempty"`
+	PaceZone int64 `bson:"pace_zone" json:"pace_zone,omitempty"`
 	// The moving time of this split, in seconds
-	MovingTime int32 `bson:"moving_time" json:"moving_time,omitempty"`
+	MovingTime int64 `bson:"moving_time" json:"moving_time,omitempty"`
 	// N/A
-	Split int32 `bson:"split" json:"split,omitempty"`
+	Split int64 `bson:"split" json:"split,omitempty"`
 }

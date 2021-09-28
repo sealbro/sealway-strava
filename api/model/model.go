@@ -18,8 +18,8 @@ type StravaSubscriptionData struct {
 }
 
 type StravaToken struct {
-	AthleteID int    `bson:"_id" json:"athlete_id"`
-	Access    string `bson:"access" json:"access"`
-	Refresh   string `bson:"refresh" json:"refresh"`
-	Expired   string `bson:"expired" json:"expired"`
+	AthleteID int64     `bson:"_id" json:"athlete_id"`
+	Access    string    `bson:"access" json:"access"`
+	Refresh   string    `bson:"refresh" json:"refresh"`
+	Expired   time.Time `bson:"expired" json:"expired"`
 }

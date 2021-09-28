@@ -11,5 +11,5 @@ package strava
 
 type MetaActivity struct {
 	// The unique identifier of the activity
-	Id int64 `bson:"id" json:"id,omitempty"`
+	ID int64 `bson:"id" json:"id,omitempty"`
 }

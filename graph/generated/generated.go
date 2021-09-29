@@ -177,7 +177,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Activities func(childComplexity int, athleteIds []int64) int
+		Activities func(childComplexity int, athleteIds []int64, limit int64) int
 		Activity   func(childComplexity int, id int64) int
 	}
 
@@ -246,7 +246,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	Activity(ctx context.Context, id int64) (*strava.DetailedActivity, error)
-	Activities(ctx context.Context, athleteIds []int64) ([]*strava.DetailedActivity, error)
+	Activities(ctx context.Context, athleteIds []int64, limit int64) ([]*strava.DetailedActivity, error)
 }
 type SubscriptionResolver interface {
 	Activities(ctx context.Context) (<-chan []*strava.DetailedActivity, error)
@@ -1003,7 +1003,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Activities(childComplexity, args["athlete_ids"].([]int64)), true
+		return e.complexity.Query.Activities(childComplexity, args["athlete_ids"].([]int64), args["limit"].(int64)), true
 
 	case "Query.activity":
 		if e.complexity.Query.Activity == nil {
@@ -1578,7 +1578,7 @@ type SummaryPrSegmentEffort {
 
 type Query {
   activity (id: Int!): DetailedActivity
-  activities (athlete_ids: [Int!]): [DetailedActivity!]
+  activities (athlete_ids: [Int!], limit: Int!): [DetailedActivity!]
 }
 
 input NewAthleteToken {
@@ -1644,6 +1644,15 @@ func (ec *executionContext) field_Query_activities_args(ctx context.Context, raw
 		}
 	}
 	args["athlete_ids"] = arg0
+	var arg1 int64
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg1, err = ec.unmarshalNInt2int64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg1
 	return args, nil
 }
 
@@ -5319,7 +5328,7 @@ func (ec *executionContext) _Query_activities(ctx context.Context, field graphql
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Activities(rctx, args["athlete_ids"].([]int64))
+		return ec.resolvers.Query().Activities(rctx, args["athlete_ids"].([]int64), args["limit"].(int64))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

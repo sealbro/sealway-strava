@@ -27,8 +27,8 @@ func (r *queryResolver) Activity(ctx context.Context, id int64) (*strava.Detaile
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *queryResolver) Activities(ctx context.Context, athleteIds []int64) ([]*strava.DetailedActivity, error) {
-	activities, err := r.Repository.GetActivities()
+func (r *queryResolver) Activities(ctx context.Context, athleteIds []int64, limit int64) ([]*strava.DetailedActivity, error) {
+	activities, err := r.Repository.GetActivities(athleteIds, limit)
 
 	return activities, err
 }

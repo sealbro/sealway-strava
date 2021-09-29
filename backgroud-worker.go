@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"github.com/avast/retry-go"
 	"sealway-strava/api"
 	"sealway-strava/api/model"
 	"sealway-strava/infra"
@@ -23,39 +25,84 @@ func (worker *BackgroundWorker) RunBackgroundWorker() chan model.StravaSubscript
 
 func (worker *BackgroundWorker) process(ch chan model.StravaSubscriptionData) {
 	for {
-		// TODO отдельную очередь для update/create c retry и батчем по времени
+		// check exit
 		data, ok := <-ch
 		if ok == false {
 			break
-		} else {
-			// TODO to process if object_type = activity and aspect_type (create or update)
-			athleteId, err := strconv.ParseInt(data.AthleteId, 10, 64)
-			if err != nil {
-				infra.Log.Errorf("can't convert %s to int64", data.AthleteId)
-			} else {
-				// TODO add expire index, add to DB if error before save
-				if err := worker.StravaRepository.AddNewSubscription(&model.StravaSubscription{
-					CreateDate: time.Now(),
-					Data:       data,
-				}); err != nil {
-					infra.Log.Error("can't insert subscription")
-				}
+		}
 
-				// TODO save if create
-				if err := worker.SaveActivityById(athleteId, data.ActivityId); err != nil {
-					infra.Log.Errorf("can't save activity [%d] for athlete [%d] : %s", data.ActivityId, athleteId, err.Error())
+		err := retry.Do(
+			func() error {
+				infra.Log.Infof("Start worker for activity [%d] for athlete [%s]", data.ActivityId, data.AthleteId)
+				err := worker.processTask(data)
+				if err != nil {
+					infra.Log.Error(err.Error())
 				}
+				infra.Log.Infof("Finish worker for activity [%d] for athlete [%s]", data.ActivityId, data.AthleteId)
 
-				// TODO update changed properties
-			}
+				return err
+			},
+			retry.Attempts(5),
+			retry.Delay(time.Minute),
+			retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+				return time.Duration(n) * time.Minute
+			}),
+		)
+
+		if err != nil {
+			infra.Log.Error(err.Error())
 		}
 	}
 }
 
+func (worker *BackgroundWorker) processTask(data model.StravaSubscriptionData) error {
+	// convert athlete id
+	athleteId, err := strconv.ParseInt(data.AthleteId, 10, 64)
+	if err != nil {
+		return fmt.Errorf("can't convert %s to int64", data.AthleteId)
+	}
+
+	// save subscription
+	if err := worker.StravaRepository.AddNewSubscription(&model.StravaSubscription{
+		ExpireAt: time.Now().Add(7 * 24 * time.Hour),
+		Data:     data,
+	}); err != nil {
+		return fmt.Errorf("can't insert subscription for activity [%d] for athlete [%d] : %s", data.ActivityId, athleteId, err.Error())
+	}
+
+	if data.Type == "activity" {
+		switch data.Operation {
+		case "update":
+			props := map[string]interface{}{}
+			for key, value := range data.Updates {
+				dbPropName := key
+				switch key {
+				case "title":
+					dbPropName = "name"
+				}
+
+				props[dbPropName] = value
+			}
+
+			if err := worker.StravaRepository.UpdateDetailedActivity(data.ActivityId, props); err != nil {
+				return fmt.Errorf("can't update activity [%d] for athlete [%d] : %s", data.ActivityId, athleteId, err.Error())
+			}
+		case "create":
+			fallthrough
+		default:
+			if err := worker.SaveActivityById(athleteId, data.ActivityId); err != nil {
+				return fmt.Errorf("can't save activity [%d] for athlete [%d] : %s", data.ActivityId, athleteId, err.Error())
+			}
+		}
+	}
+
+	return nil
+}
+
 func (worker *BackgroundWorker) SaveActivityById(athleteId int64, activityId int64) error {
+	// TODO redis cache
 	stravaToken, err := worker.StravaRepository.GetToken(athleteId)
 	if err != nil {
-		// TODO то в этом случае нужно сохранить subscribe
 		return err
 	}
 
@@ -63,14 +110,6 @@ func (worker *BackgroundWorker) SaveActivityById(athleteId int64, activityId int
 	if err != nil {
 		return err
 	}
-
-	// TODO Cache or Update in DB
-	//worker.StravaRepository.UpsertToken(&api.StravaToken{
-	//	AthleteID: athleteId,
-	//	Access:   *accessToken,
-	//	Refresh: stravaToken.Refresh,
-	//	Expired:   "",
-	//})
 
 	activity, err := worker.StravaService.GetActivityById(*accessToken, activityId)
 	if err != nil {

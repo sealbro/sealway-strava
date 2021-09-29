@@ -3,8 +3,8 @@ package model
 import "time"
 
 type StravaSubscription struct {
-	CreateDate time.Time              `bson:"create_date" json:"create_date"`
-	Data       StravaSubscriptionData `bson:"data" json:"data"`
+	ExpireAt time.Time              `bson:"expire_at" json:"expire_at"`
+	Data     StravaSubscriptionData `bson:"data" json:"data"`
 }
 
 type StravaSubscriptionData struct {

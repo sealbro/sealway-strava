@@ -51,6 +51,7 @@ func main() {
 		Queue:      queue,
 		DefaultApi: defaultApi,
 	}
+	restApi.RegisterHealth()
 	restApi.RegisterApiRoutes()
 
 	graphqlApi := graph.GraphqlApi{

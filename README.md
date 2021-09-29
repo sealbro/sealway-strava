@@ -15,19 +15,9 @@ sealway strava integration
 - gRPC [support](https://ednsquare.com/story/build-simple-api-with-grpc-protobuf-and-golang------kuxI0H)
     - ```go get -u github.com/golang/protobuf/protoc-gen-go```
     - ```protoc --go_out=plugins=grpc:. api.proto```
-  
-## Алгоритм работы и возможности
 
-- API Получение ИД события от стравы
-  - Положить в Очередь или локальное хранилище в случае проблемы
-  - Положить в БД
-  - Создать действие я получение данных или обновление
-- Сервис/демон который учитывая количество запросов ставит в очередь загрузки данные
-  - сохранение в БД
-- gRPC/API получает запрос по пользователям (AthleteId, token, priority) с приоритетами для загрузки данных
-- если данных нет то возвращается список AthleteId + NextRequestDate + WaitActivities(ExpectedDate, ActivityId)
-- если данные есть и готовы, то возвращаются или ActivityId[] c которыми нужно будет идти в GraphQL
-- добавить крон сервис который проверяет для каких AthleteID появились токены и отправляет из в очередь
-  - сгруппировать по ActivityId и вернуть только уникальные
-- расширить модель graphql стравы
-- заменить subscibe ID на _id ActivityId
+## Generate grahpql
+
+- `cd ./graph`
+- `go run github.com/99designs/gqlgen generate`
+- Replace `model.` to `strava.` without mutations

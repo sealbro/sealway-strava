@@ -191,14 +191,12 @@ type SummaryPrSegmentEffort {
 
 type Query {
   activity (id: Int!): DetailedActivity
-  activities (athlete_ids: [Int!]): [DetailedActivity!]
+  activities (athlete_ids: [Int!], limit: Int!): [DetailedActivity!]
 }
 
 input NewAthleteToken {
   athlete_id: Int!
-  access: String!
   refresh: String!
-  expired: Time!
 }
 
 type Mutation {

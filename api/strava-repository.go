@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"sealway-strava/api/model"
 	"sealway-strava/infra"
@@ -28,9 +29,34 @@ func InitStravaRepository(connectionString string, ctx context.Context) (error, 
 		return err, nil
 	}
 
-	return err, &StravaRepository{
+	repository := &StravaRepository{
 		Client: client,
 	}
+
+	repository.AddIndex(stravaDataBaseName, stravaActivityCollectionName, bson.M{"athlete.id": 1}, nil)
+
+	expireAfterSeconds := int32(0)
+	repository.AddIndex(stravaDataBaseName, stravaSubscriptionCollectionName, bson.D{{"expire_at", 1}}, &options.IndexOptions{
+		ExpireAfterSeconds: &expireAfterSeconds,
+	})
+	repository.AddIndex(stravaDataBaseName, stravaSubscriptionCollectionName, bson.D{{"data.owner_id", 1}, {"data.object_id", 1}}, nil)
+
+	return err, repository
+}
+
+func (repository *StravaRepository) AddIndex(dbName string, collection string, indexKeys interface{}, opt *options.IndexOptions) error {
+	serviceCollection := repository.Client.Database(dbName).Collection(collection)
+	indexName, err := serviceCollection.Indexes().CreateOne(mtest.Background, mongo.IndexModel{
+		Keys:    indexKeys,
+		Options: opt,
+	})
+	if err != nil {
+		return err
+	}
+
+	infra.Log.Tracef("Index created: %s", indexName)
+
+	return nil
 }
 
 // Operations
@@ -44,6 +70,15 @@ func (repository *StravaRepository) AddNewSubscription(data *model.StravaSubscri
 	return err
 }
 
+func (repository *StravaRepository) UpdateDetailedActivity(activityID int64, updates interface{}) error {
+	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaActivityCollectionName)
+	ctx, cancel := createTimeoutContext()
+	defer cancel()
+	_, err := collection.UpdateByID(ctx, activityID, bson.M{"$set": updates})
+
+	return err
+}
+
 func (repository *StravaRepository) AddDetailedActivity(activity *strava.DetailedActivity) error {
 	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaActivityCollectionName)
 	ctx, cancel := createTimeoutContext()
@@ -52,11 +87,7 @@ func (repository *StravaRepository) AddDetailedActivity(activity *strava.Detaile
 
 	_, err := collection.InsertOne(ctx, activity)
 
-	if err != nil {
-		return fmt.Errorf("can't insert activity %d : %w", activity.ID, err)
-	}
-
-	return nil
+	return err
 }
 
 func (repository *StravaRepository) UpsertToken(token *model.StravaToken) error {
@@ -86,22 +117,23 @@ func (repository *StravaRepository) GetToken(athleteId int64) (*model.StravaToke
 	return token, nil
 }
 
-func (repository *StravaRepository) GetActivities() ([]*strava.DetailedActivity, error) {
+func (repository *StravaRepository) GetActivities(athleteIds []int64, limit int64) ([]*strava.DetailedActivity, error) {
 	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaActivityCollectionName)
 	ctx, cancel := createTimeoutContext()
 	defer cancel()
-	cursor, err := collection.Find(ctx, bson.D{})
+	cursor, err := collection.Find(ctx, bson.M{"athlete.id": bson.M{"$in": athleteIds}})
 	defer cursor.Close(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	var activities []*strava.DetailedActivity
-	for cursor.Next(ctx) {
+	for cursor.Next(ctx) && limit > 0 {
+		limit--
 		var activity *strava.DetailedActivity
 		err := cursor.Decode(&activity)
 		if err != nil {
-			infra.Log.Errorf("decode activity : %s", err.Error())
+			infra.Log.Tracef("decode activity : %s", err.Error())
 		}
 		activities = append(activities, activity)
 	}
@@ -112,5 +144,5 @@ func (repository *StravaRepository) GetActivities() ([]*strava.DetailedActivity,
 // Helpers
 
 func createTimeoutContext() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), 5*time.Second)
+	return context.WithTimeout(context.Background(), 15*time.Second)
 }

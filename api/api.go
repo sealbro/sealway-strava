@@ -13,6 +13,14 @@ type DefaultApi struct {
 	ApplicationSlug string
 }
 
+func (api *SubscriptionApi) RegisterHealth() {
+	api.Router.HandleFunc("/health", func(w http.ResponseWriter, request *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(200)
+		w.Write([]byte("Success"))
+	}).Methods("GET")
+}
+
 func (api *DefaultApi) Prefix(serverName string, path string) string {
 	return fmt.Sprintf("/%s/%s%s", api.ApplicationSlug, serverName, path)
 }

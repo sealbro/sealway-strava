@@ -1583,9 +1583,7 @@ type Query {
 
 input NewAthleteToken {
   athlete_id: Int!
-  access: String!
   refresh: String!
-  expired: Time!
 }
 
 type Mutation {
@@ -7985,27 +7983,11 @@ func (ec *executionContext) unmarshalInputNewAthleteToken(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
-		case "access":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("access"))
-			it.Access, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "refresh":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("refresh"))
 			it.Refresh, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "expired":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expired"))
-			it.Expired, err = ec.unmarshalNTime2timeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
 			}

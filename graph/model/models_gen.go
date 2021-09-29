@@ -115,10 +115,8 @@ type MetaAthlete struct {
 }
 
 type NewAthleteToken struct {
-	AthleteID int64     `json:"athlete_id"`
-	Access    string    `json:"access"`
-	Refresh   string    `json:"refresh"`
-	Expired   time.Time `json:"expired"`
+	AthleteID int64  `json:"athlete_id"`
+	Refresh   string `json:"refresh"`
 }
 
 type PhotosSummary struct {

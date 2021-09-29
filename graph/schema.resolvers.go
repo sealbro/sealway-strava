@@ -15,9 +15,7 @@ import (
 func (r *mutationResolver) AddToken(ctx context.Context, input model.NewAthleteToken) (int64, error) {
 	err := r.Repository.UpsertToken(&api.StravaToken{
 		AthleteID: input.AthleteID,
-		Access:    input.Access,
 		Refresh:   input.Refresh,
-		Expired:   input.Expired,
 	})
 
 	return 1, err

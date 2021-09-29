@@ -18,7 +18,7 @@ steps:
     url:
       from_secret: grafana_url
 
-- name: docker-build-dotnet
+- name: docker-build-go
   image: docker
   privileged: true
   commands:
@@ -125,7 +125,7 @@ kind: secret
 name: vault_docker_password
 get:
   path: devops/docker_hub/sealway
-  name: password
+  name: token
 
 ---
 kind: secret

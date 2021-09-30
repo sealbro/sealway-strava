@@ -85,7 +85,7 @@ job "sealway-strava" {
         data = <<EOH
 SEALWAY_Services__Strava__Client={{ key "client_id" }}
 SEALWAY_Services__Strava__Secret={{ key "client_secret" }}
-SEALWAY_ConnectionStrings__Mongo__Connection={{ key "client_secret" }}
+SEALWAY_ConnectionStrings__Mongo__Connection={{ key "mongodb" }}
 EOH
 
         destination = "secrets/file.env"

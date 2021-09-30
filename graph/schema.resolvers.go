@@ -5,7 +5,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	api "sealway-strava/api/model"
 	"sealway-strava/graph/generated"
 	"sealway-strava/graph/model"
@@ -13,7 +12,7 @@ import (
 )
 
 func (r *mutationResolver) AddToken(ctx context.Context, input model.NewAthleteToken) (int64, error) {
-	err := r.Repository.UpsertToken(&api.StravaToken{
+	err := r.Repository.UpsertToken(ctx, &api.StravaToken{
 		AthleteID: input.AthleteID,
 		Refresh:   input.Refresh,
 	})
@@ -22,17 +21,15 @@ func (r *mutationResolver) AddToken(ctx context.Context, input model.NewAthleteT
 }
 
 func (r *queryResolver) Activity(ctx context.Context, id int64) (*strava.DetailedActivity, error) {
-	panic(fmt.Errorf("not implemented"))
+	return r.Repository.GetActivity(ctx, id)
 }
 
 func (r *queryResolver) Activities(ctx context.Context, athleteIds []int64, limit int64) ([]*strava.DetailedActivity, error) {
-	activities, err := r.Repository.GetActivities(athleteIds, limit)
-
-	return activities, err
+	return r.Repository.GetActivities(ctx, athleteIds, limit)
 }
 
 func (r *subscriptionResolver) Activities(ctx context.Context) (<-chan []*strava.DetailedActivity, error) {
-	panic(fmt.Errorf("not implemented"))
+	return r.OutboundQueue, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

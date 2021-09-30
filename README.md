@@ -1,6 +1,13 @@
 # sealway-strava
 sealway strava integration
 
+## Debug
+
+- set environments
+  - `SEALWAY_ConnectionStrings__Mongo__Connection`
+  - `SEALWAY_Services__Strava__Client`
+  - `SEALWAY_Services__Strava__Secret`
+- localhost mongo `docker run -d --restart=always --name mongodb -p 27017:27017 mongo`
 
 ## Generate strava client
 

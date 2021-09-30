@@ -70,13 +70,21 @@ func (repository *StravaRepository) AddNewSubscription(data *model.StravaSubscri
 	return err
 }
 
-func (repository *StravaRepository) UpdateDetailedActivity(activityID int64, updates interface{}) error {
+func (repository *StravaRepository) UpdateDetailedActivity(activityID int64, updates interface{}) (*strava.DetailedActivity, error) {
 	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaActivityCollectionName)
 	ctx, cancel := createTimeoutContext()
 	defer cancel()
-	_, err := collection.UpdateByID(ctx, activityID, bson.M{"$set": updates})
+	upd, err := collection.UpdateByID(ctx, activityID, bson.M{"$set": updates})
 
-	return err
+	if err != nil {
+		return nil, err
+	}
+
+	if upd.ModifiedCount > 0 {
+		return repository.GetActivity(ctx, activityID)
+	}
+
+	return nil, nil
 }
 
 func (repository *StravaRepository) AddDetailedActivity(activity *strava.DetailedActivity) error {
@@ -90,9 +98,9 @@ func (repository *StravaRepository) AddDetailedActivity(activity *strava.Detaile
 	return err
 }
 
-func (repository *StravaRepository) UpsertToken(token *model.StravaToken) error {
+func (repository *StravaRepository) UpsertToken(innerCtx context.Context, token *model.StravaToken) error {
 	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaTokenCollectionName)
-	ctx, cancel := createTimeoutContext()
+	ctx, cancel := createTimeoutFromInnerContext(innerCtx)
 	defer cancel()
 	_, err := collection.InsertOne(ctx, token)
 
@@ -110,16 +118,24 @@ func (repository *StravaRepository) GetToken(athleteId int64) (*model.StravaToke
 
 	var token *model.StravaToken
 	err := collection.FindOne(ctx, bson.D{{"_id", athleteId}}).Decode(&token)
-	if err != nil {
-		return nil, err
-	}
 
-	return token, nil
+	return token, err
 }
 
-func (repository *StravaRepository) GetActivities(athleteIds []int64, limit int64) ([]*strava.DetailedActivity, error) {
+func (repository *StravaRepository) GetActivity(innerCtx context.Context, activityId int64) (*strava.DetailedActivity, error) {
 	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaActivityCollectionName)
-	ctx, cancel := createTimeoutContext()
+	ctx, cancel := createTimeoutFromInnerContext(innerCtx)
+	defer cancel()
+
+	var activity *strava.DetailedActivity
+	err := collection.FindOne(ctx, bson.D{{"_id", activityId}}).Decode(&activity)
+
+	return activity, err
+}
+
+func (repository *StravaRepository) GetActivities(innerCtx context.Context, athleteIds []int64, limit int64) ([]*strava.DetailedActivity, error) {
+	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaActivityCollectionName)
+	ctx, cancel := createTimeoutFromInnerContext(innerCtx)
 	defer cancel()
 	cursor, err := collection.Find(ctx, bson.M{"athlete.id": bson.M{"$in": athleteIds}})
 	defer cursor.Close(ctx)
@@ -145,4 +161,8 @@ func (repository *StravaRepository) GetActivities(athleteIds []int64, limit int6
 
 func createTimeoutContext() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), 15*time.Second)
+}
+
+func createTimeoutFromInnerContext(innerCtx context.Context) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(innerCtx, 15*time.Second)
 }

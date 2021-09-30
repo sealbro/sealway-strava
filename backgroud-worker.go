@@ -6,6 +6,7 @@ import (
 	"sealway-strava/api"
 	"sealway-strava/api/model"
 	"sealway-strava/infra"
+	"sealway-strava/strava"
 	"strconv"
 	"time"
 )
@@ -15,18 +16,19 @@ type BackgroundWorker struct {
 	StravaService    *api.StravaService
 }
 
-func (worker *BackgroundWorker) RunBackgroundWorker() chan model.StravaSubscriptionData {
-	stravaSubChannel := make(chan model.StravaSubscriptionData)
+func (worker *BackgroundWorker) RunBackgroundWorker() (chan model.StravaSubscriptionData, chan []*strava.DetailedActivity) {
+	inboundQueue := make(chan model.StravaSubscriptionData)
+	outboundQueue := make(chan []*strava.DetailedActivity)
 
-	go worker.process(stravaSubChannel)
+	go worker.process(inboundQueue, outboundQueue)
 
-	return stravaSubChannel
+	return inboundQueue, outboundQueue
 }
 
-func (worker *BackgroundWorker) process(ch chan model.StravaSubscriptionData) {
+func (worker *BackgroundWorker) process(inboundQueue chan model.StravaSubscriptionData, outboundQueue chan []*strava.DetailedActivity) {
 	for {
 		// check exit
-		data, ok := <-ch
+		data, ok := <-inboundQueue
 		if ok == false {
 			break
 		}
@@ -34,10 +36,15 @@ func (worker *BackgroundWorker) process(ch chan model.StravaSubscriptionData) {
 		err := retry.Do(
 			func() error {
 				infra.Log.Infof("Start worker for activity [%d] for athlete [%s]", data.ActivityId, data.AthleteId)
-				err := worker.processTask(data)
+				activity, err := worker.processTask(data)
 				if err != nil {
 					infra.Log.Error(err.Error())
 				}
+
+				if activity != nil {
+					outboundQueue <- []*strava.DetailedActivity{activity}
+				}
+
 				infra.Log.Infof("Finish worker for activity [%d] for athlete [%s]", data.ActivityId, data.AthleteId)
 
 				return err
@@ -55,11 +62,11 @@ func (worker *BackgroundWorker) process(ch chan model.StravaSubscriptionData) {
 	}
 }
 
-func (worker *BackgroundWorker) processTask(data model.StravaSubscriptionData) error {
+func (worker *BackgroundWorker) processTask(data model.StravaSubscriptionData) (*strava.DetailedActivity, error) {
 	// convert athlete id
 	athleteId, err := strconv.ParseInt(data.AthleteId, 10, 64)
 	if err != nil {
-		return fmt.Errorf("can't convert %s to int64", data.AthleteId)
+		return nil, fmt.Errorf("can't convert %s to int64", data.AthleteId)
 	}
 
 	// save subscription
@@ -67,8 +74,10 @@ func (worker *BackgroundWorker) processTask(data model.StravaSubscriptionData) e
 		ExpireAt: time.Now().Add(7 * 24 * time.Hour),
 		Data:     data,
 	}); err != nil {
-		return fmt.Errorf("can't insert subscription for activity [%d] for athlete [%d] : %s", data.ActivityId, athleteId, err.Error())
+		return nil, fmt.Errorf("can't insert subscription for activity [%d] for athlete [%d] : %s", data.ActivityId, athleteId, err.Error())
 	}
+
+	var activity *strava.DetailedActivity
 
 	if data.Type == "activity" {
 		switch data.Operation {
@@ -84,42 +93,42 @@ func (worker *BackgroundWorker) processTask(data model.StravaSubscriptionData) e
 				props[dbPropName] = value
 			}
 
-			if err := worker.StravaRepository.UpdateDetailedActivity(data.ActivityId, props); err != nil {
-				return fmt.Errorf("can't update activity [%d] for athlete [%d] : %s", data.ActivityId, athleteId, err.Error())
+			if activity, err = worker.StravaRepository.UpdateDetailedActivity(data.ActivityId, props); err != nil {
+				return nil, fmt.Errorf("can't update activity [%d] for athlete [%d] : %s", data.ActivityId, athleteId, err.Error())
 			}
 		case "create":
 			fallthrough
 		default:
-			if err := worker.SaveActivityById(athleteId, data.ActivityId); err != nil {
-				return fmt.Errorf("can't save activity [%d] for athlete [%d] : %s", data.ActivityId, athleteId, err.Error())
+			if activity, err = worker.SaveActivityById(athleteId, data.ActivityId); err != nil {
+				return nil, fmt.Errorf("can't save activity [%d] for athlete [%d] : %s", data.ActivityId, athleteId, err.Error())
 			}
 		}
 	}
 
-	return nil
+	return activity, nil
 }
 
-func (worker *BackgroundWorker) SaveActivityById(athleteId int64, activityId int64) error {
+func (worker *BackgroundWorker) SaveActivityById(athleteId int64, activityId int64) (*strava.DetailedActivity, error) {
 	// TODO redis cache
 	stravaToken, err := worker.StravaRepository.GetToken(athleteId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	accessToken, err := worker.StravaService.RefreshToken(stravaToken.Refresh)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	activity, err := worker.StravaService.GetActivityById(*accessToken, activityId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = worker.StravaRepository.AddDetailedActivity(activity)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return activity, nil
 }

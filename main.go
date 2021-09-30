@@ -12,13 +12,12 @@ import (
 	"time"
 )
 
-var applicationSlug = "integration-strava"
-
 // ENVs
 var connectionString = infra.EnvOrDefault("SEALWAY_ConnectionStrings__Mongo__Connection", "mongodb://localhost:27017")
 var stravaClientId = os.Getenv("SEALWAY_Services__Strava__Client")
 var stravaSecretId = os.Getenv("SEALWAY_Services__Strava__Secret")
 var port = infra.EnvOrDefault("PORT", "8080")
+var applicationSlug = infra.EnvOrDefault("SLUG", "integration-strava")
 
 func main() {
 	stravaClient := strava.NewAPIClient(strava.NewConfiguration())
@@ -29,6 +28,9 @@ func main() {
 		panic(err)
 	}
 
+	subscriptionManager := &graph.SubscriptionManager{}
+	subscriptionManager.Init()
+
 	var stravaService = &api.StravaService{
 		ClientId:     stravaClientId,
 		SecretId:     stravaSecretId,
@@ -36,10 +38,11 @@ func main() {
 	}
 
 	var backgroundWorker = &BackgroundWorker{
-		StravaService:    stravaService,
-		StravaRepository: stravaRepository,
+		SubscriptionManager: subscriptionManager,
+		StravaService:       stravaService,
+		StravaRepository:    stravaRepository,
 	}
-	inboundQueue, outboundQueue := backgroundWorker.RunBackgroundWorker()
+	inboundQueue := backgroundWorker.RunBackgroundWorker()
 
 	router := mux.NewRouter()
 	defaultApi := &api.DefaultApi{
@@ -56,8 +59,8 @@ func main() {
 
 	graphqlApi := graph.GraphqlApi{
 		Resolvers: &graph.Resolver{
-			OutboundQueue: outboundQueue,
-			Repository:    stravaRepository,
+			SubscriptionManager: subscriptionManager,
+			Repository:          stravaRepository,
 		},
 		DefaultApi: defaultApi,
 	}
@@ -74,7 +77,7 @@ func main() {
 		},
 		DeferAction: func(ctx context.Context) error {
 			close(inboundQueue)
-			close(outboundQueue)
+
 			cancelMongo()
 			stravaRepository.Client.Disconnect(ctx)
 

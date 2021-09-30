@@ -5,6 +5,7 @@ import (
 	"github.com/avast/retry-go"
 	"sealway-strava/api"
 	"sealway-strava/api/model"
+	"sealway-strava/graph"
 	"sealway-strava/infra"
 	"sealway-strava/strava"
 	"strconv"
@@ -12,20 +13,20 @@ import (
 )
 
 type BackgroundWorker struct {
-	StravaRepository *api.StravaRepository
-	StravaService    *api.StravaService
+	StravaRepository    *api.StravaRepository
+	StravaService       *api.StravaService
+	SubscriptionManager *graph.SubscriptionManager
 }
 
-func (worker *BackgroundWorker) RunBackgroundWorker() (chan model.StravaSubscriptionData, chan []*strava.DetailedActivity) {
+func (worker *BackgroundWorker) RunBackgroundWorker() chan model.StravaSubscriptionData {
 	inboundQueue := make(chan model.StravaSubscriptionData)
-	outboundQueue := make(chan []*strava.DetailedActivity)
 
-	go worker.process(inboundQueue, outboundQueue)
+	go worker.process(inboundQueue)
 
-	return inboundQueue, outboundQueue
+	return inboundQueue
 }
 
-func (worker *BackgroundWorker) process(inboundQueue chan model.StravaSubscriptionData, outboundQueue chan []*strava.DetailedActivity) {
+func (worker *BackgroundWorker) process(inboundQueue chan model.StravaSubscriptionData) {
 	for {
 		// check exit
 		data, ok := <-inboundQueue
@@ -35,17 +36,18 @@ func (worker *BackgroundWorker) process(inboundQueue chan model.StravaSubscripti
 
 		err := retry.Do(
 			func() error {
-				infra.Log.Infof("Start worker for activity [%d] for athlete [%s]", data.ActivityId, data.AthleteId)
+				infra.Log.Infof("Start attempt process for activity [%d] with athlete [%s]", data.ActivityId, data.AthleteId)
 				activity, err := worker.processTask(data)
 				if err != nil {
 					infra.Log.Error(err.Error())
 				}
 
 				if activity != nil {
-					outboundQueue <- []*strava.DetailedActivity{activity}
+					worker.SubscriptionManager.Notify([]*strava.DetailedActivity{activity})
+					infra.Log.Infof("Activity [%d] sent to subscribers", data.ActivityId)
 				}
 
-				infra.Log.Infof("Finish worker for activity [%d] for athlete [%s]", data.ActivityId, data.AthleteId)
+				infra.Log.Infof("Finish attempt process for activity [%d] with athlete [%s]", data.ActivityId, data.AthleteId)
 
 				return err
 			},

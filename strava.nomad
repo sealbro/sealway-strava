@@ -41,8 +41,8 @@ job "sealway-strava" {
     }
 
     service {
-      name = "sealway-strava-ui"
-      tags = ["ui", "http", "sealway-strava"]
+      name = "integration-strava"
+      tags = ["ui", "http", "sealway", "api", "internal"]
       port = "app"
 
       check {
@@ -94,6 +94,7 @@ EOH
 
       env {
         PORT = "8080"
+        SLUG = "integration-strava"
       }
 
       resources {

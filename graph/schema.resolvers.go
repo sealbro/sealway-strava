@@ -29,7 +29,7 @@ func (r *queryResolver) Activities(ctx context.Context, athleteIds []int64, limi
 }
 
 func (r *subscriptionResolver) Activities(ctx context.Context) (<-chan []*strava.DetailedActivity, error) {
-	return r.OutboundQueue, nil
+	return r.SubscriptionManager.AddSubscriber(ctx), nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

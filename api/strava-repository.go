@@ -102,7 +102,12 @@ func (repository *StravaRepository) UpsertToken(innerCtx context.Context, token 
 	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaTokenCollectionName)
 	ctx, cancel := createTimeoutFromInnerContext(innerCtx)
 	defer cancel()
-	_, err := collection.InsertOne(ctx, token)
+
+	opts := options.Update().SetUpsert(true)
+	filter := bson.D{{"_id", token.AthleteID}}
+	update := bson.D{{"$set", token}}
+
+	_, err := collection.UpdateOne(ctx, filter, update, opts)
 
 	if err != nil {
 		return fmt.Errorf("can't insert token %d : %w", token.AthleteID, err)

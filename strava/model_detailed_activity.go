@@ -34,16 +34,17 @@ type DetailedActivity struct {
 	// The activity's highest elevation, in meters
 	ElevHigh float64 `bson:"elev_high" json:"elev_high,omitempty"`
 	// The activity's lowest elevation, in meters
-	ElevLow float64       `bson:"elev_low" json:"elev_low,omitempty"`
-	Type    *ActivityType `bson:"type" json:"type,omitempty"`
+	ElevLow float64 `bson:"elev_low" json:"elev_low,omitempty"`
+	// model_activity_type.go List of ActivityType
+	Type *string `bson:"type" json:"type,omitempty"`
 	// The time at which the activity was started.
 	StartDate time.Time `bson:"start_date" json:"start_date,omitempty"`
 	// The time at which the activity was started in the local timezone.
 	StartDateLocal time.Time `bson:"start_date_local" json:"start_date_local,omitempty"`
 	// The timezone of the activity
-	Timezone    string     `bson:"timezone" json:"timezone,omitempty"`
-	StartLatlng *[]float64 `bson:"start_latlng" json:"start_latlng,omitempty"`
-	EndLatlng   *[]float64 `bson:"end_latlng" json:"end_latlng,omitempty"`
+	Timezone    string    `bson:"timezone" json:"timezone,omitempty"`
+	StartLatlng []float64 `bson:"start_latlng" json:"start_latlng,omitempty"`
+	EndLatlng   []float64 `bson:"end_latlng" json:"end_latlng,omitempty"`
 	// The number of achievements gained during this activity
 	AchievementCount int64 `bson:"achievement_count" json:"achievement_count,omitempty"`
 	// The number of kudos given for this activity
@@ -94,16 +95,16 @@ type DetailedActivity struct {
 	Photos      *PhotosSummary `bson:"photos" json:"photos,omitempty"`
 	Gear        *SummaryGear   `bson:"gear" json:"gear,omitempty"`
 	// The number of kilocalories consumed during this activity
-	Calories       float64                 `bson:"calories" json:"calories,omitempty"`
-	SegmentEfforts []DetailedSegmentEffort `bson:"segment_efforts" json:"segment_efforts,omitempty"`
+	Calories       float64                  `bson:"calories" json:"calories,omitempty"`
+	SegmentEfforts []*DetailedSegmentEffort `bson:"segment_efforts" json:"segment_efforts,omitempty"`
 	// The name of the device used to record the activity
 	DeviceName string `bson:"device_name" json:"device_name,omitempty"`
 	// The token used to embed a Strava activity
 	EmbedToken string `bson:"embed_token" json:"embed_token,omitempty"`
 	// The splits of this activity in metric units (for runs)
-	SplitsMetric []Split `bson:"splits_metric" json:"splits_metric,omitempty"`
+	SplitsMetric []*Split `bson:"splits_metric" json:"splits_metric,omitempty"`
 	// The splits of this activity in imperial units (for runs)
-	SplitsStandard []Split                 `bson:"splits_standard" json:"splits_standard,omitempty"`
-	Laps           []Lap                   `bson:"laps" json:"laps,omitempty"`
-	BestEfforts    []DetailedSegmentEffort `bson:"best_efforts" json:"best_efforts,omitempty"`
+	SplitsStandard []*Split                 `bson:"splits_standard" json:"splits_standard,omitempty"`
+	Laps           []*Lap                   `bson:"laps" json:"laps,omitempty"`
+	BestEfforts    []*DetailedSegmentEffort `bson:"best_efforts" json:"best_efforts,omitempty"`
 }

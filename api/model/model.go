@@ -2,6 +2,10 @@ package model
 
 import "time"
 
+type StravaVerify struct {
+	Challenge string `json:"hub.challenge"`
+}
+
 type StravaSubscription struct {
 	ExpireAt time.Time              `bson:"expire_at" json:"expire_at"`
 	Data     StravaSubscriptionData `bson:"data" json:"data"`

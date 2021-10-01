@@ -1408,8 +1408,8 @@ type DetailedActivity {
   start_date: Time!
   start_date_local: Time!
   timezone: String!
-  start_latlng: [Float!]
-  end_latlng: [Float!]
+  start_latlng: [Float!]!
+  end_latlng: [Float!]!
   achievement_count: Int!
   kudos_count: Int!
   comment_count: Int!
@@ -1437,13 +1437,13 @@ type DetailedActivity {
   photos: PhotosSummary
   gear: SummaryGear
   calories: Float!
-  segment_efforts: [DetailedSegmentEffort!]
+  segment_efforts: [DetailedSegmentEffort]
   device_name: String!
   embed_token: String!
-  splits_metric: [Split!]
-  splits_standard: [Split!]
-  laps: [Lap!]
-  best_efforts: [DetailedSegmentEffort!]
+  splits_metric: [Split]
+  splits_standard: [Split]
+  laps: [Lap]
+  best_efforts: [DetailedSegmentEffort]
 }
 
 type MetaAthlete {
@@ -2251,11 +2251,14 @@ func (ec *executionContext) _DetailedActivity_start_latlng(ctx context.Context, 
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]float64)
 	fc.Result = res
-	return ec.marshalOFloat2ᚕfloat64ᚄ(ctx, field.Selections, res)
+	return ec.marshalNFloat2ᚕfloat64ᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DetailedActivity_end_latlng(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
@@ -2283,11 +2286,14 @@ func (ec *executionContext) _DetailedActivity_end_latlng(ctx context.Context, fi
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]float64)
 	fc.Result = res
-	return ec.marshalOFloat2ᚕfloat64ᚄ(ctx, field.Selections, res)
+	return ec.marshalNFloat2ᚕfloat64ᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DetailedActivity_achievement_count(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
@@ -3255,7 +3261,7 @@ func (ec *executionContext) _DetailedActivity_segment_efforts(ctx context.Contex
 	}
 	res := resTmp.([]*strava.DetailedSegmentEffort)
 	fc.Result = res
-	return ec.marshalODetailedSegmentEffort2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffortᚄ(ctx, field.Selections, res)
+	return ec.marshalODetailedSegmentEffort2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffort(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DetailedActivity_device_name(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
@@ -3357,7 +3363,7 @@ func (ec *executionContext) _DetailedActivity_splits_metric(ctx context.Context,
 	}
 	res := resTmp.([]*strava.Split)
 	fc.Result = res
-	return ec.marshalOSplit2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplitᚄ(ctx, field.Selections, res)
+	return ec.marshalOSplit2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplit(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DetailedActivity_splits_standard(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
@@ -3389,7 +3395,7 @@ func (ec *executionContext) _DetailedActivity_splits_standard(ctx context.Contex
 	}
 	res := resTmp.([]*strava.Split)
 	fc.Result = res
-	return ec.marshalOSplit2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplitᚄ(ctx, field.Selections, res)
+	return ec.marshalOSplit2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplit(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DetailedActivity_laps(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
@@ -3421,7 +3427,7 @@ func (ec *executionContext) _DetailedActivity_laps(ctx context.Context, field gr
 	}
 	res := resTmp.([]*strava.Lap)
 	fc.Result = res
-	return ec.marshalOLap2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐLapᚄ(ctx, field.Selections, res)
+	return ec.marshalOLap2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐLap(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DetailedActivity_best_efforts(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
@@ -3453,7 +3459,7 @@ func (ec *executionContext) _DetailedActivity_best_efforts(ctx context.Context, 
 	}
 	res := resTmp.([]*strava.DetailedSegmentEffort)
 	fc.Result = res
-	return ec.marshalODetailedSegmentEffort2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffortᚄ(ctx, field.Selections, res)
+	return ec.marshalODetailedSegmentEffort2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffort(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DetailedSegmentEffort_id(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
@@ -8087,8 +8093,14 @@ func (ec *executionContext) _DetailedActivity(ctx context.Context, sel ast.Selec
 			}
 		case "start_latlng":
 			out.Values[i] = ec._DetailedActivity_start_latlng(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "end_latlng":
 			out.Values[i] = ec._DetailedActivity_end_latlng(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "achievement_count":
 			out.Values[i] = ec._DetailedActivity_achievement_count(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -9354,16 +9366,6 @@ func (ec *executionContext) marshalNDetailedActivity2ᚖsealwayᚑstravaᚋgraph
 	return ec._DetailedActivity(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNDetailedSegmentEffort2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffort(ctx context.Context, sel ast.SelectionSet, v *strava.DetailedSegmentEffort) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._DetailedSegmentEffort(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
 	res, err := graphql.UnmarshalFloat(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -9377,6 +9379,42 @@ func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNFloat2ᚕfloat64ᚄ(ctx context.Context, v interface{}) ([]float64, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]float64, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNFloat2float64(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNFloat2ᚕfloat64ᚄ(ctx context.Context, sel ast.SelectionSet, v []float64) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNFloat2float64(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNID2int64(ctx context.Context, v interface{}) (int64, error) {
@@ -9409,29 +9447,9 @@ func (ec *executionContext) marshalNInt2int64(ctx context.Context, sel ast.Selec
 	return res
 }
 
-func (ec *executionContext) marshalNLap2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐLap(ctx context.Context, sel ast.SelectionSet, v *strava.Lap) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Lap(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalNNewAthleteToken2sealwayᚑstravaᚋgraphᚋmodelᚐNewAthleteToken(ctx context.Context, v interface{}) (model.NewAthleteToken, error) {
 	res, err := ec.unmarshalInputNewAthleteToken(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNSplit2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplit(ctx context.Context, sel ast.SelectionSet, v *strava.Split) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Split(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -9814,7 +9832,7 @@ func (ec *executionContext) marshalODetailedActivity2ᚖsealwayᚑstravaᚋgraph
 	return ec._DetailedActivity(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalODetailedSegmentEffort2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffortᚄ(ctx context.Context, sel ast.SelectionSet, v []*strava.DetailedSegmentEffort) graphql.Marshaler {
+func (ec *executionContext) marshalODetailedSegmentEffort2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffort(ctx context.Context, sel ast.SelectionSet, v []*strava.DetailedSegmentEffort) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -9841,7 +9859,7 @@ func (ec *executionContext) marshalODetailedSegmentEffort2ᚕᚖsealwayᚑstrava
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNDetailedSegmentEffort2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffort(ctx, sel, v[i])
+			ret[i] = ec.marshalODetailedSegmentEffort2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffort(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -9852,13 +9870,14 @@ func (ec *executionContext) marshalODetailedSegmentEffort2ᚕᚖsealwayᚑstrava
 	}
 	wg.Wait()
 
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
 	return ret
+}
+
+func (ec *executionContext) marshalODetailedSegmentEffort2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffort(ctx context.Context, sel ast.SelectionSet, v *strava.DetailedSegmentEffort) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DetailedSegmentEffort(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOFloat2ᚕfloat64ᚄ(ctx context.Context, v interface{}) ([]float64, error) {
@@ -9945,7 +9964,7 @@ func (ec *executionContext) marshalOInt2ᚕint64ᚄ(ctx context.Context, sel ast
 	return ret
 }
 
-func (ec *executionContext) marshalOLap2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐLapᚄ(ctx context.Context, sel ast.SelectionSet, v []*strava.Lap) graphql.Marshaler {
+func (ec *executionContext) marshalOLap2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐLap(ctx context.Context, sel ast.SelectionSet, v []*strava.Lap) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -9972,7 +9991,7 @@ func (ec *executionContext) marshalOLap2ᚕᚖsealwayᚑstravaᚋgraphᚋmodel�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNLap2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐLap(ctx, sel, v[i])
+			ret[i] = ec.marshalOLap2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐLap(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -9983,13 +10002,14 @@ func (ec *executionContext) marshalOLap2ᚕᚖsealwayᚑstravaᚋgraphᚋmodel�
 	}
 	wg.Wait()
 
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
 	return ret
+}
+
+func (ec *executionContext) marshalOLap2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐLap(ctx context.Context, sel ast.SelectionSet, v *strava.Lap) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Lap(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOMetaActivity2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐMetaActivity(ctx context.Context, sel ast.SelectionSet, v *strava.MetaActivity) graphql.Marshaler {
@@ -10027,7 +10047,7 @@ func (ec *executionContext) marshalOPolylineMap2ᚖsealwayᚑstravaᚋgraphᚋmo
 	return ec._PolylineMap(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOSplit2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplitᚄ(ctx context.Context, sel ast.SelectionSet, v []*strava.Split) graphql.Marshaler {
+func (ec *executionContext) marshalOSplit2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplit(ctx context.Context, sel ast.SelectionSet, v []*strava.Split) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -10054,7 +10074,7 @@ func (ec *executionContext) marshalOSplit2ᚕᚖsealwayᚑstravaᚋgraphᚋmodel
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNSplit2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplit(ctx, sel, v[i])
+			ret[i] = ec.marshalOSplit2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplit(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -10065,13 +10085,14 @@ func (ec *executionContext) marshalOSplit2ᚕᚖsealwayᚑstravaᚋgraphᚋmodel
 	}
 	wg.Wait()
 
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
 	return ret
+}
+
+func (ec *executionContext) marshalOSplit2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplit(ctx context.Context, sel ast.SelectionSet, v *strava.Split) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Split(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

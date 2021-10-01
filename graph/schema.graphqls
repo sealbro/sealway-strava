@@ -21,8 +21,8 @@ type DetailedActivity {
   start_date: Time!
   start_date_local: Time!
   timezone: String!
-  start_latlng: [Float!]
-  end_latlng: [Float!]
+  start_latlng: [Float!]!
+  end_latlng: [Float!]!
   achievement_count: Int!
   kudos_count: Int!
   comment_count: Int!
@@ -50,13 +50,13 @@ type DetailedActivity {
   photos: PhotosSummary
   gear: SummaryGear
   calories: Float!
-  segment_efforts: [DetailedSegmentEffort!]
+  segment_efforts: [DetailedSegmentEffort]
   device_name: String!
   embed_token: String!
-  splits_metric: [Split!]
-  splits_standard: [Split!]
-  laps: [Lap!]
-  best_efforts: [DetailedSegmentEffort!]
+  splits_metric: [Split]
+  splits_standard: [Split]
+  laps: [Lap]
+  best_efforts: [DetailedSegmentEffort]
 }
 
 type MetaAthlete {

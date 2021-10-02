@@ -8,6 +8,7 @@ import (
 	api "sealway-strava/api/model"
 	"sealway-strava/graph/generated"
 	"sealway-strava/graph/model"
+	"sealway-strava/infra"
 	"sealway-strava/strava"
 )
 
@@ -16,6 +17,8 @@ func (r *mutationResolver) AddToken(ctx context.Context, input model.NewAthleteT
 		AthleteID: input.AthleteID,
 		Refresh:   input.Refresh,
 	})
+
+	infra.Log.Infof("Refresh token for %s", input.AthleteID)
 
 	return 1, err
 }

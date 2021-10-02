@@ -41,20 +41,6 @@ steps:
       from_secret: nomad_url
     template: ./strava.nomad
 
-- name: grafana-annotation-success-deploy
-  image: fdeschenes/drone-grafana-annotation
-  settings:
-    api_key:
-      from_secret: vault_grafana_api_key
-    tags:
-      - deploy
-    text: sealway-strava deployed by Drone
-    url:
-      from_secret: grafana_url
-  when:
-    status:
-    - success
-
 - name: discord-notification
   image: appleboy/drone-discord
   privileged: true
@@ -68,7 +54,7 @@ steps:
         :white_check_mark: build `sealway-strava` {{build.number}} succeeded. Good job.
       :notepad_spiral: commit:
       ```{{commit.message}}```
-      :ship: https://hub.docker.com/u/pachman
+      :ship: https://hub.docker.com/u/sealway
       {{else}}
          :sos: build `sealway-strava` {{build.number}} failed. Fix me please.
       {{/success}}

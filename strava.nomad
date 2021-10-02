@@ -42,7 +42,7 @@ job "sealway-strava" {
 
     service {
       name = "integration-strava"
-      tags = ["wss", "ui", "http", "sealway", "api", "internal"]
+      tags = ["wss", "http", "sealway", "api", "private", "internal"]
       port = "app"
 
       check {

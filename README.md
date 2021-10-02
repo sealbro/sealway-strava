@@ -28,3 +28,13 @@ sealway strava integration
 - `cd ./graph`
 - `go run github.com/99designs/gqlgen generate`
 - Replace `model.` to `strava.` without mutations
+
+## Ideas
+
+- query get refresh token and access
+- mutation reload all activities by athlete with limit
+- mutation download activities from strava by athlete with limit
+
+## Problems
+
+- graphql generate `[Type!]!` or `[Type!]` [here](https://github.com/graph-gophers/graphql-go/issues/78#issue-220709670)

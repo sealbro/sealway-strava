@@ -32,9 +32,10 @@ func main() {
 	subscriptionManager.Init()
 
 	var stravaService = &api.StravaService{
-		ClientId:     stravaClientId,
-		SecretId:     stravaSecretId,
-		StravaClient: stravaClient,
+		ClientId:         stravaClientId,
+		SecretId:         stravaSecretId,
+		StravaClient:     stravaClient,
+		StravaRepository: stravaRepository,
 	}
 
 	var backgroundWorker = &BackgroundWorker{
@@ -59,6 +60,7 @@ func main() {
 
 	graphqlApi := graph.GraphqlApi{
 		Resolvers: &graph.Resolver{
+			StravaService:       stravaService,
 			SubscriptionManager: subscriptionManager,
 			Repository:          stravaRepository,
 		},

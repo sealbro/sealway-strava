@@ -11,9 +11,10 @@ import (
 )
 
 type StravaService struct {
-	StravaClient *strava.APIClient
-	ClientId     string
-	SecretId     string
+	StravaClient     *strava.APIClient
+	ClientId         string
+	SecretId         string
+	StravaRepository *StravaRepository
 }
 
 func (service *StravaService) GetActivityById(token string, activityId int64) (*strava.DetailedActivity, error) {
@@ -30,7 +31,22 @@ func (service *StravaService) GetActivityById(token string, activityId int64) (*
 	return &activity, nil
 }
 
-func (service *StravaService) RefreshToken(refreshToken string) (*string, error) {
+// TODO redis cache
+func (service *StravaService) RefreshToken(athleteId int64) (*string, error) {
+	stravaToken, err := service.StravaRepository.GetToken(athleteId)
+	if err != nil {
+		return nil, err
+	}
+
+	accessToken, err := service.refreshToken(stravaToken.Refresh)
+	if err != nil {
+		return nil, err
+	}
+
+	return accessToken, err
+}
+
+func (service *StravaService) refreshToken(refreshToken string) (*string, error) {
 	url := "https://www.strava.com/api/v3/oauth/token"
 
 	values := map[string]string{

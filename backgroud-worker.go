@@ -8,7 +8,6 @@ import (
 	"sealway-strava/graph"
 	"sealway-strava/infra"
 	"sealway-strava/strava"
-	"strconv"
 	"time"
 )
 
@@ -36,7 +35,7 @@ func (worker *BackgroundWorker) process(inboundQueue chan model.StravaSubscripti
 
 		err := retry.Do(
 			func() error {
-				infra.Log.Infof("Start attempt process for activity [%d] with athlete [%s]", data.ActivityId, data.AthleteId)
+				infra.Log.Infof("Start attempt process for activity [%d] with athlete [%d]", data.ActivityId, data.AthleteId)
 				activity, err := worker.processTask(data)
 				if err != nil {
 					infra.Log.Error(err.Error())
@@ -44,10 +43,9 @@ func (worker *BackgroundWorker) process(inboundQueue chan model.StravaSubscripti
 
 				if activity != nil {
 					worker.SubscriptionManager.Notify([]*strava.DetailedActivity{activity})
-					infra.Log.Infof("Activity [%d] sent to subscribers", data.ActivityId)
 				}
 
-				infra.Log.Infof("Finish attempt process for activity [%d] with athlete [%s]", data.ActivityId, data.AthleteId)
+				infra.Log.Infof("Finish attempt process for activity [%d] with athlete [%d]", data.ActivityId, data.AthleteId)
 
 				return err
 			},
@@ -66,10 +64,7 @@ func (worker *BackgroundWorker) process(inboundQueue chan model.StravaSubscripti
 
 func (worker *BackgroundWorker) processTask(data model.StravaSubscriptionData) (*strava.DetailedActivity, error) {
 	// convert athlete id
-	athleteId, err := strconv.ParseInt(data.AthleteId, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("can't convert %s to int64", data.AthleteId)
-	}
+	athleteId := data.AthleteId
 
 	// save subscription
 	if err := worker.StravaRepository.AddNewSubscription(&model.StravaSubscription{
@@ -80,8 +75,10 @@ func (worker *BackgroundWorker) processTask(data model.StravaSubscriptionData) (
 	}
 
 	var activity *strava.DetailedActivity
+	var err error
 
 	if data.Type == "activity" {
+
 		switch data.Operation {
 		case "update":
 			props := map[string]interface{}{}
@@ -111,13 +108,7 @@ func (worker *BackgroundWorker) processTask(data model.StravaSubscriptionData) (
 }
 
 func (worker *BackgroundWorker) SaveActivityById(athleteId int64, activityId int64) (*strava.DetailedActivity, error) {
-	// TODO redis cache
-	stravaToken, err := worker.StravaRepository.GetToken(athleteId)
-	if err != nil {
-		return nil, err
-	}
-
-	accessToken, err := worker.StravaService.RefreshToken(stravaToken.Refresh)
+	accessToken, err := worker.StravaService.RefreshToken(athleteId)
 	if err != nil {
 		return nil, err
 	}

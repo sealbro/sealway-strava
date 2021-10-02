@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+type AthleteToken struct {
+	Refresh string `json:"refresh"`
+}
+
 type DetailedActivity struct {
 	ID                   int64                    `json:"id"`
 	ExternalID           string                   `json:"external_id"`

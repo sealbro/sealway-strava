@@ -2,6 +2,7 @@
 #
 # https://gqlgen.com/getting-started/
 
+scalar Void
 scalar Time
 scalar ActivityType
 
@@ -186,12 +187,15 @@ type SummaryPrSegmentEffort {
   effort_count: Int!
 }
 
-
+type AthleteToken {
+    refresh: String!
+}
 
 
 type Query {
   activity (id: Int!): DetailedActivity
   activities (athlete_ids: [Int!], limit: Int!): [DetailedActivity!]
+  token (athlete_id:Int!): AthleteToken!
 }
 
 input NewAthleteToken {
@@ -200,7 +204,8 @@ input NewAthleteToken {
 }
 
 type Mutation {
-  addToken(input: NewAthleteToken!): Int!
+  addToken(input: NewAthleteToken!): Void
+  resendSavedActivities(athlete_ids: [Int!], limit: Int!): Void
 }
 
 type Subscription {

@@ -31,7 +31,6 @@ sealway strava integration
 
 ## Ideas
 
-- query get refresh token and access
 - mutation reload all activities by athlete with limit
 - mutation download activities from strava by athlete with limit
 

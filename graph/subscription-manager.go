@@ -2,6 +2,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"github.com/google/uuid"
 	"sealway-strava/infra"
 	"sealway-strava/strava"
@@ -16,6 +17,12 @@ func (manager *SubscriptionManager) Init() {
 }
 
 func (manager *SubscriptionManager) Notify(activities []*strava.DetailedActivity) {
+	var activityIds string
+	for _, a := range activities {
+		activityIds = fmt.Sprintf("%d,%s", a.ID, activityIds)
+	}
+
+	infra.Log.Infof("Send activities [%s] to subscribers [%d]", activityIds, len(manager.subscribers))
 	for _, ch := range manager.subscribers {
 		ch <- activities
 	}

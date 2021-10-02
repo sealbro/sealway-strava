@@ -11,4 +11,5 @@ import (
 type Resolver struct {
 	Repository          *api.StravaRepository
 	SubscriptionManager *SubscriptionManager
+	StravaService       *api.StravaService
 }

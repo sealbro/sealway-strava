@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	api "sealway-strava/api/model"
 	"sealway-strava/graph/generated"
 	"sealway-strava/graph/model"
@@ -12,7 +13,7 @@ import (
 	"sealway-strava/strava"
 )
 
-func (r *mutationResolver) AddToken(ctx context.Context, input model.NewAthleteToken) (int64, error) {
+func (r *mutationResolver) AddToken(ctx context.Context, input model.NewAthleteToken) (*string, error) {
 	err := r.Repository.UpsertToken(ctx, &api.StravaToken{
 		AthleteID: input.AthleteID,
 		Refresh:   input.Refresh,
@@ -20,7 +21,11 @@ func (r *mutationResolver) AddToken(ctx context.Context, input model.NewAthleteT
 
 	infra.Log.Infof("Refresh token for %s", input.AthleteID)
 
-	return 1, err
+	return nil, err
+}
+
+func (r *mutationResolver) ResendSavedActivities(ctx context.Context, athleteIds []int64, limit int64) (*string, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *queryResolver) Activity(ctx context.Context, id int64) (*strava.DetailedActivity, error) {
@@ -29,6 +34,17 @@ func (r *queryResolver) Activity(ctx context.Context, id int64) (*strava.Detaile
 
 func (r *queryResolver) Activities(ctx context.Context, athleteIds []int64, limit int64) ([]*strava.DetailedActivity, error) {
 	return r.Repository.GetActivities(ctx, athleteIds, limit)
+}
+
+func (r *queryResolver) Token(ctx context.Context, athleteID int64) (*model.AthleteToken, error) {
+	token, err := r.StravaService.RefreshToken(athleteID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.AthleteToken{
+		Refresh: *token,
+	}, nil
 }
 
 func (r *subscriptionResolver) Activities(ctx context.Context) (<-chan []*strava.DetailedActivity, error) {

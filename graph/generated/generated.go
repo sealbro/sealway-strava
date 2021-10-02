@@ -11,6 +11,7 @@ import (
 	"sealway-strava/strava"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -46,6 +47,10 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	AthleteToken struct {
+		Refresh func(childComplexity int) int
+	}
+
 	DetailedActivity struct {
 		AchievementCount     func(childComplexity int) int
 		Athlete              func(childComplexity int) int
@@ -155,7 +160,8 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddToken func(childComplexity int, input model.NewAthleteToken) int
+		AddToken              func(childComplexity int, input model.NewAthleteToken) int
+		ResendSavedActivities func(childComplexity int, athleteIds []int64, limit int64) int
 	}
 
 	PhotosSummary struct {
@@ -179,6 +185,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Activities func(childComplexity int, athleteIds []int64, limit int64) int
 		Activity   func(childComplexity int, id int64) int
+		Token      func(childComplexity int, athleteID int64) int
 	}
 
 	Split struct {
@@ -242,11 +249,13 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	AddToken(ctx context.Context, input model.NewAthleteToken) (int64, error)
+	AddToken(ctx context.Context, input model.NewAthleteToken) (*string, error)
+	ResendSavedActivities(ctx context.Context, athleteIds []int64, limit int64) (*string, error)
 }
 type QueryResolver interface {
 	Activity(ctx context.Context, id int64) (*strava.DetailedActivity, error)
 	Activities(ctx context.Context, athleteIds []int64, limit int64) ([]*strava.DetailedActivity, error)
+	Token(ctx context.Context, athleteID int64) (*model.AthleteToken, error)
 }
 type SubscriptionResolver interface {
 	Activities(ctx context.Context) (<-chan []*strava.DetailedActivity, error)
@@ -266,6 +275,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "AthleteToken.refresh":
+		if e.complexity.AthleteToken.Refresh == nil {
+			break
+		}
+
+		return e.complexity.AthleteToken.Refresh(childComplexity), true
 
 	case "DetailedActivity.achievement_count":
 		if e.complexity.DetailedActivity.AchievementCount == nil {
@@ -930,6 +946,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AddToken(childComplexity, args["input"].(model.NewAthleteToken)), true
 
+	case "Mutation.resendSavedActivities":
+		if e.complexity.Mutation.ResendSavedActivities == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_resendSavedActivities_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ResendSavedActivities(childComplexity, args["athlete_ids"].([]int64), args["limit"].(int64)), true
+
 	case "PhotosSummary.count":
 		if e.complexity.PhotosSummary.Count == nil {
 			break
@@ -1016,6 +1044,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Activity(childComplexity, args["id"].(int64)), true
+
+	case "Query.token":
+		if e.complexity.Query.Token == nil {
+			break
+		}
+
+		args, err := ec.field_Query_token_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Token(childComplexity, args["athlete_id"].(int64)), true
 
 	case "Split.average_speed":
 		if e.complexity.Split.AverageSpeed == nil {
@@ -1389,6 +1429,7 @@ var sources = []*ast.Source{
 #
 # https://gqlgen.com/getting-started/
 
+scalar Void
 scalar Time
 scalar ActivityType
 
@@ -1573,12 +1614,15 @@ type SummaryPrSegmentEffort {
   effort_count: Int!
 }
 
-
+type AthleteToken {
+    refresh: String!
+}
 
 
 type Query {
   activity (id: Int!): DetailedActivity
   activities (athlete_ids: [Int!], limit: Int!): [DetailedActivity!]
+  token (athlete_id:Int!): AthleteToken!
 }
 
 input NewAthleteToken {
@@ -1587,7 +1631,8 @@ input NewAthleteToken {
 }
 
 type Mutation {
-  addToken(input: NewAthleteToken!): Int!
+  addToken(input: NewAthleteToken!): Void
+  resendSavedActivities(athlete_ids: [Int!], limit: Int!): Void
 }
 
 type Subscription {
@@ -1612,6 +1657,30 @@ func (ec *executionContext) field_Mutation_addToken_args(ctx context.Context, ra
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_resendSavedActivities_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []int64
+	if tmp, ok := rawArgs["athlete_ids"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("athlete_ids"))
+		arg0, err = ec.unmarshalOInt2ᚕint64ᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["athlete_ids"] = arg0
+	var arg1 int64
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg1, err = ec.unmarshalNInt2int64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg1
 	return args, nil
 }
 
@@ -1669,6 +1738,21 @@ func (ec *executionContext) field_Query_activity_args(ctx context.Context, rawAr
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_token_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int64
+	if tmp, ok := rawArgs["athlete_id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("athlete_id"))
+		arg0, err = ec.unmarshalNInt2int64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["athlete_id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field___Type_enumValues_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1706,6 +1790,41 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _AthleteToken_refresh(ctx context.Context, field graphql.CollectedField, obj *model.AthleteToken) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AthleteToken",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Refresh, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
 
 func (ec *executionContext) _DetailedActivity_id(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
 	defer func() {
@@ -4949,14 +5068,50 @@ func (ec *executionContext) _Mutation_addToken(ctx context.Context, field graphq
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(int64)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNInt2int64(ctx, field.Selections, res)
+	return ec.marshalOVoid2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_resendSavedActivities(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_resendSavedActivities_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ResendSavedActivities(rctx, args["athlete_ids"].([]int64), args["limit"].(int64))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOVoid2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PhotosSummary_count(ctx context.Context, field graphql.CollectedField, obj *strava.PhotosSummary) (ret graphql.Marshaler) {
@@ -5344,6 +5499,48 @@ func (ec *executionContext) _Query_activities(ctx context.Context, field graphql
 	res := resTmp.([]*strava.DetailedActivity)
 	fc.Result = res
 	return ec.marshalODetailedActivity2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivityᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_token(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_token_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Token(rctx, args["athlete_id"].(int64))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.AthleteToken)
+	fc.Result = res
+	return ec.marshalNAthleteToken2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐAthleteToken(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -8011,6 +8208,33 @@ func (ec *executionContext) unmarshalInputNewAthleteToken(ctx context.Context, o
 
 // region    **************************** object.gotpl ****************************
 
+var athleteTokenImplementors = []string{"AthleteToken"}
+
+func (ec *executionContext) _AthleteToken(ctx context.Context, sel ast.SelectionSet, obj *model.AthleteToken) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, athleteTokenImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AthleteToken")
+		case "refresh":
+			out.Values[i] = ec._AthleteToken_refresh(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var detailedActivityImplementors = []string{"DetailedActivity"}
 
 func (ec *executionContext) _DetailedActivity(ctx context.Context, sel ast.SelectionSet, obj *strava.DetailedActivity) graphql.Marshaler {
@@ -8558,9 +8782,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = graphql.MarshalString("Mutation")
 		case "addToken":
 			out.Values[i] = ec._Mutation_addToken(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+		case "resendSavedActivities":
+			out.Values[i] = ec._Mutation_resendSavedActivities(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8712,6 +8935,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_activities(ctx, field)
+				return res
+			})
+		case "token":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_token(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
 		case "__type":
@@ -9296,6 +9533,20 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
+
+func (ec *executionContext) marshalNAthleteToken2sealwayᚑstravaᚋgraphᚋmodelᚐAthleteToken(ctx context.Context, sel ast.SelectionSet, v model.AthleteToken) graphql.Marshaler {
+	return ec._AthleteToken(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAthleteToken2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐAthleteToken(ctx context.Context, sel ast.SelectionSet, v *model.AthleteToken) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._AthleteToken(ctx, sel, v)
+}
 
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
@@ -10187,6 +10438,21 @@ func (ec *executionContext) marshalOSummarySegmentEffort2ᚖsealwayᚑstravaᚋg
 		return graphql.Null
 	}
 	return ec._SummarySegmentEffort(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOVoid2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalString(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOVoid2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*v)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

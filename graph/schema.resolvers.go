@@ -5,7 +5,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	api "sealway-strava/api/model"
 	"sealway-strava/graph/generated"
 	"sealway-strava/graph/model"
@@ -25,7 +24,12 @@ func (r *mutationResolver) AddToken(ctx context.Context, input model.NewAthleteT
 }
 
 func (r *mutationResolver) ResendSavedActivities(ctx context.Context, athleteIds []int64, limit int64) (*string, error) {
-	panic(fmt.Errorf("not implemented"))
+	activities, err := r.Repository.GetActivities(ctx, athleteIds, limit)
+	if err == nil {
+		r.SubscriptionManager.Notify(activities)
+	}
+
+	return nil, err
 }
 
 func (r *queryResolver) Activity(ctx context.Context, id int64) (*strava.DetailedActivity, error) {

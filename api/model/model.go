@@ -6,10 +6,11 @@ import (
 )
 
 type StravaQuota struct {
-	Limit15min int `json:"limit_15_min"`
-	LimitDay   int `json:"limit_day"`
-	Usage15min int `json:"usage_15_min"`
-	UsageDay   int `json:"usage_day"`
+	Limit15min int       `json:"limit_15_min"`
+	LimitDay   int       `json:"limit_day"`
+	Usage15min int       `json:"usage_15_min"`
+	UsageDay   int       `json:"usage_day"`
+	LastUpdate time.Time `json:"last_update"`
 }
 
 type StravaVerify struct {
@@ -37,11 +38,13 @@ type StravaToken struct {
 }
 
 func (quota *StravaQuota) CheckQuota() error {
-	if quota.Limit15min-quota.Usage15min <= 0 {
+	diff := time.Since(quota.LastUpdate)
+
+	if quota.Limit15min-quota.Usage15min <= 0 && diff.Minutes() < 15 {
 		return fmt.Errorf("15min quota [%d/%d]", quota.Usage15min, quota.Limit15min)
 	}
 
-	if quota.LimitDay-quota.UsageDay <= 0 {
+	if quota.LimitDay-quota.UsageDay <= 0 && diff.Hours() < 24 {
 		return fmt.Errorf("day quota [%d/%d]", quota.UsageDay, quota.LimitDay)
 	}
 

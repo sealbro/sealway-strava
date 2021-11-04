@@ -11,6 +11,7 @@ import (
 	"sealway-strava/strava"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type StravaService struct {
@@ -162,5 +163,6 @@ func updateQuota(response *http.Response) {
 		LimitDay:   limitDay,
 		Usage15min: usage15min,
 		UsageDay:   usageDay,
+		LastUpdate: time.Now(),
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sealway-strava/api/model"
 	"sealway-strava/infra"
+	"time"
 )
 
 var stravaQuota = model.StravaQuota{
@@ -14,6 +15,7 @@ var stravaQuota = model.StravaQuota{
 	LimitDay:   1000,
 	Usage15min: 0,
 	UsageDay:   0,
+	LastUpdate: time.Now(),
 }
 
 type SubscriptionApi struct {

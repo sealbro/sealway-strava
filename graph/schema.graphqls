@@ -206,6 +206,7 @@ input NewAthleteToken {
 type Mutation {
   addToken(input: NewAthleteToken!): Void
   resendSavedActivities(athlete_ids: [Int!], limit: Int!): Void
+  reloadAthleteActivities(athlete_ids: [Int!], before: Int, after: Int, page: Int, limit: Int!): Void
 }
 
 type Subscription {

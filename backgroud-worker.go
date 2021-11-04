@@ -108,12 +108,7 @@ func (worker *BackgroundWorker) processTask(data model.StravaSubscriptionData) (
 }
 
 func (worker *BackgroundWorker) SaveActivityById(athleteId int64, activityId int64) (*strava.DetailedActivity, error) {
-	accessToken, err := worker.StravaService.RefreshToken(athleteId)
-	if err != nil {
-		return nil, err
-	}
-
-	activity, err := worker.StravaService.GetActivityById(*accessToken, activityId)
+	activity, err := worker.StravaService.GetActivityById(athleteId, activityId)
 	if err != nil {
 		return nil, err
 	}

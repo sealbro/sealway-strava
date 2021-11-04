@@ -9,14 +9,22 @@ import (
 	"sealway-strava/infra"
 )
 
+var stravaQuota = model.StravaQuota{
+	Limit15min: 100,
+	LimitDay:   1000,
+	Usage15min: 0,
+	UsageDay:   0,
+}
+
 type SubscriptionApi struct {
-	Queue chan model.StravaSubscriptionData
+	ActivitiesQueue chan model.StravaSubscriptionData
 	*DefaultApi
 }
 
 func (api *SubscriptionApi) RegisterApiRoutes() {
 	var serverName = "api"
 	api.Router.HandleFunc(api.Prefix(serverName, "/health"), api.subscription).Methods("GET")
+	api.Router.HandleFunc(api.Prefix(serverName, "/quota"), api.quota).Methods("GET")
 	api.Router.HandleFunc(api.Prefix(serverName, "/subscription"), api.verify).Methods("GET")
 	api.Router.HandleFunc(api.Prefix(serverName, "/subscription"), api.subscription).Methods("POST")
 }
@@ -47,7 +55,11 @@ func (api *SubscriptionApi) subscription(w http.ResponseWriter, r *http.Request)
 
 	defer r.Body.Close()
 
-	api.Queue <- data
+	api.ActivitiesQueue <- data
 
 	respondWithJSON(w, http.StatusCreated, "successful")
+}
+
+func (api *SubscriptionApi) quota(w http.ResponseWriter, r *http.Request) {
+	respondWithJSON(w, http.StatusOK, &stravaQuota)
 }

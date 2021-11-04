@@ -43,7 +43,7 @@ func main() {
 		StravaService:       stravaService,
 		StravaRepository:    stravaRepository,
 	}
-	inboundQueue := backgroundWorker.RunBackgroundWorker()
+	activitiesQueue := backgroundWorker.RunBackgroundWorker()
 
 	router := mux.NewRouter()
 	defaultApi := &api.DefaultApi{
@@ -52,14 +52,15 @@ func main() {
 	}
 
 	var restApi = &api.SubscriptionApi{
-		Queue:      inboundQueue,
-		DefaultApi: defaultApi,
+		ActivitiesQueue: activitiesQueue,
+		DefaultApi:      defaultApi,
 	}
 	restApi.RegisterHealth()
 	restApi.RegisterApiRoutes()
 
 	graphqlApi := graph.GraphqlApi{
 		Resolvers: &graph.Resolver{
+			ActivitiesQueue:     activitiesQueue,
 			StravaService:       stravaService,
 			SubscriptionManager: subscriptionManager,
 			Repository:          stravaRepository,
@@ -78,7 +79,7 @@ func main() {
 			return apiServer.ListenAndServe()
 		},
 		DeferAction: func(ctx context.Context) error {
-			close(inboundQueue)
+			close(activitiesQueue)
 
 			cancelMongo()
 			stravaRepository.Client.Disconnect(ctx)

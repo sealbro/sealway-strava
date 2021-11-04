@@ -32,6 +32,27 @@ func (r *mutationResolver) ResendSavedActivities(ctx context.Context, athleteIds
 	return nil, err
 }
 
+func (r *mutationResolver) ReloadAthleteActivities(ctx context.Context, athleteIds []int64, before *int64, after *int64, page *int64, limit int64) (*string, error) {
+	var errResult error
+	for _, athleteId := range athleteIds {
+		activities, err := r.StravaService.GetActivitiesByAthleteId(ctx, athleteId, before, after, page, limit)
+		if err != nil {
+			errResult = err
+		} else {
+			for _, activity := range activities {
+				r.ActivitiesQueue <- api.StravaSubscriptionData{
+					AthleteId:  athleteId,
+					ActivityId: activity.Id,
+					Type:       "activity",
+					Operation:  "create",
+				}
+			}
+		}
+	}
+
+	return nil, errResult
+}
+
 func (r *queryResolver) Activity(ctx context.Context, id int64) (*strava.DetailedActivity, error) {
 	return r.Repository.GetActivity(ctx, id)
 }

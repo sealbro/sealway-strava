@@ -160,8 +160,9 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddToken              func(childComplexity int, input model.NewAthleteToken) int
-		ResendSavedActivities func(childComplexity int, athleteIds []int64, limit int64) int
+		AddToken                func(childComplexity int, input model.NewAthleteToken) int
+		ReloadAthleteActivities func(childComplexity int, athleteIds []int64, before *int64, after *int64, page *int64, limit int64) int
+		ResendSavedActivities   func(childComplexity int, athleteIds []int64, limit int64) int
 	}
 
 	PhotosSummary struct {
@@ -251,6 +252,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	AddToken(ctx context.Context, input model.NewAthleteToken) (*string, error)
 	ResendSavedActivities(ctx context.Context, athleteIds []int64, limit int64) (*string, error)
+	ReloadAthleteActivities(ctx context.Context, athleteIds []int64, before *int64, after *int64, page *int64, limit int64) (*string, error)
 }
 type QueryResolver interface {
 	Activity(ctx context.Context, id int64) (*strava.DetailedActivity, error)
@@ -946,6 +948,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AddToken(childComplexity, args["input"].(model.NewAthleteToken)), true
 
+	case "Mutation.reloadAthleteActivities":
+		if e.complexity.Mutation.ReloadAthleteActivities == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_reloadAthleteActivities_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ReloadAthleteActivities(childComplexity, args["athlete_ids"].([]int64), args["before"].(*int64), args["after"].(*int64), args["page"].(*int64), args["limit"].(int64)), true
+
 	case "Mutation.resendSavedActivities":
 		if e.complexity.Mutation.ResendSavedActivities == nil {
 			break
@@ -1633,6 +1647,7 @@ input NewAthleteToken {
 type Mutation {
   addToken(input: NewAthleteToken!): Void
   resendSavedActivities(athlete_ids: [Int!], limit: Int!): Void
+  reloadAthleteActivities(athlete_ids: [Int!], before: Int, after: Int, page: Int, limit: Int!): Void
 }
 
 type Subscription {
@@ -1657,6 +1672,57 @@ func (ec *executionContext) field_Mutation_addToken_args(ctx context.Context, ra
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_reloadAthleteActivities_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []int64
+	if tmp, ok := rawArgs["athlete_ids"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("athlete_ids"))
+		arg0, err = ec.unmarshalOInt2ᚕint64ᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["athlete_ids"] = arg0
+	var arg1 *int64
+	if tmp, ok := rawArgs["before"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+		arg1, err = ec.unmarshalOInt2ᚖint64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["before"] = arg1
+	var arg2 *int64
+	if tmp, ok := rawArgs["after"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+		arg2, err = ec.unmarshalOInt2ᚖint64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg2
+	var arg3 *int64
+	if tmp, ok := rawArgs["page"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+		arg3, err = ec.unmarshalOInt2ᚖint64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg3
+	var arg4 int64
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg4, err = ec.unmarshalNInt2int64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg4
 	return args, nil
 }
 
@@ -5101,6 +5167,45 @@ func (ec *executionContext) _Mutation_resendSavedActivities(ctx context.Context,
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().ResendSavedActivities(rctx, args["athlete_ids"].([]int64), args["limit"].(int64))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOVoid2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_reloadAthleteActivities(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_reloadAthleteActivities_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ReloadAthleteActivities(rctx, args["athlete_ids"].([]int64), args["before"].(*int64), args["after"].(*int64), args["page"].(*int64), args["limit"].(int64))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8784,6 +8889,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_addToken(ctx, field)
 		case "resendSavedActivities":
 			out.Values[i] = ec._Mutation_resendSavedActivities(ctx, field)
+		case "reloadAthleteActivities":
+			out.Values[i] = ec._Mutation_reloadAthleteActivities(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -10213,6 +10320,21 @@ func (ec *executionContext) marshalOInt2ᚕint64ᚄ(ctx context.Context, sel ast
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint64(ctx context.Context, v interface{}) (*int64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt64(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint64(ctx context.Context, sel ast.SelectionSet, v *int64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalInt64(*v)
 }
 
 func (ec *executionContext) marshalOLap2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐLap(ctx context.Context, sel ast.SelectionSet, v []*strava.Lap) graphql.Marshaler {

@@ -35,10 +35,12 @@ steps:
     path: /run/docker.sock
 
 - name: nomad-deploy-sealway
-  image: loq9/drone-nomad
+  image: pachman/drone-nomad
   settings:
     addr:
       from_secret: nomad_url
+    vault_token:
+      from_secret: vault_token_nomad
     template: ./strava.nomad
 
 - name: discord-notification
@@ -140,3 +142,10 @@ name: vault_discord_webhook_token
 get:
   path: devops/discord/drone
   name: webhook_token
+
+---
+kind: secret
+name: vault_token_nomad
+get:
+  path: devops/vault
+  name: token_nomad

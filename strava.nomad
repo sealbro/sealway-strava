@@ -36,7 +36,7 @@ job "sealway-strava" {
       }
 
       dns {
-        servers = ["172.17.0.1", "192.168.1.55", "192.168.1.1"]
+        servers = ["172.17.0.1", "192.168.1.1"]
       }
     }
 
@@ -50,7 +50,7 @@ job "sealway-strava" {
         port     = "app"
         interval = "1m"
         timeout  = "30s"
-        path     = "/health"
+        path     = "/healthz"
       }
     }
 
@@ -67,7 +67,7 @@ job "sealway-strava" {
       size = 300
     }
 
-    task "container" {
+    task "sealway-strava" {
       driver = "docker"
 
       config {
@@ -83,13 +83,18 @@ job "sealway-strava" {
 
       template {
         data = <<EOH
-SEALWAY_Services__Strava__Client={{ key "client_id" }}
-SEALWAY_Services__Strava__Secret={{ key "client_secret" }}
-SEALWAY_ConnectionStrings__Mongo__Connection={{ key "mongodb" }}
+SEALWAY_Services__Strava__Client={{with secret "applications/prod/default/Services/Strava"}}{{.Data.data.client_id}}{{end}}
+SEALWAY_Services__Strava__Secret={{with secret "applications/prod/default/Services/Strava"}}{{.Data.data.client_secret}}{{end}}
+SEALWAY_ConnectionStrings__Mongo__Connection={{ key "applications/prod/default/ConnectionStrings/Mongo" }}
 EOH
 
         destination = "secrets/file.env"
         env         = true
+      }
+
+      vault {
+        policies = ["nomad-server"]
+        env = false
       }
 
       env {

@@ -25,7 +25,6 @@ type SubscriptionApi struct {
 
 func (api *SubscriptionApi) RegisterApiRoutes() {
 	var serverName = "api"
-	api.Router.HandleFunc(api.Prefix(serverName, "/healthz"), api.subscription).Methods("GET")
 	api.Router.HandleFunc(api.Prefix(serverName, "/quota"), api.quota).Methods("GET")
 	api.Router.HandleFunc(api.Prefix(serverName, "/subscription"), api.verify).Methods("GET")
 	api.Router.HandleFunc(api.Prefix(serverName, "/subscription"), api.subscription).Methods("POST")

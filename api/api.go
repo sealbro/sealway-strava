@@ -14,10 +14,10 @@ type DefaultApi struct {
 }
 
 func (api *SubscriptionApi) RegisterHealth() {
-	api.Router.HandleFunc("/health", func(w http.ResponseWriter, request *http.Request) {
+	api.Router.HandleFunc("/healthz", func(w http.ResponseWriter, request *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		w.Write([]byte("Success"))
+		w.Write([]byte("Healthy"))
 	}).Methods("GET")
 }
 

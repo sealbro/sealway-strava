@@ -9,6 +9,7 @@ import (
 	"sealway-strava/graph"
 	"sealway-strava/infra"
 	"sealway-strava/strava"
+	"strconv"
 	"time"
 )
 
@@ -16,6 +17,10 @@ import (
 var connectionString = infra.EnvOrDefault("SEALWAY_ConnectionStrings__Mongo__Connection", "mongodb://localhost:27017")
 var stravaClientId = os.Getenv("SEALWAY_Services__Strava__Client")
 var stravaSecretId = os.Getenv("SEALWAY_Services__Strava__Secret")
+
+var activityBatchSize, _ = strconv.Atoi(infra.EnvOrDefault("ACTIVITY_BATCH_SIZE", "50"))
+var activityBatchTime, _ = time.ParseDuration(infra.EnvOrDefault("ACTIVITY_BATCH_TIME", "45s"))
+
 var port = infra.EnvOrDefault("PORT", "8080")
 var applicationSlug = infra.EnvOrDefault("SLUG", "integration-strava")
 
@@ -28,7 +33,10 @@ func main() {
 		panic(err)
 	}
 
-	subscriptionManager := &graph.SubscriptionManager{}
+	subscriptionManager := &graph.SubscriptionManager{
+		ActivityBatchSize: activityBatchSize,
+		ActivityBatchTime: activityBatchTime,
+	}
 	subscriptionManager.Init()
 
 	var stravaService = &api.StravaService{
@@ -81,6 +89,7 @@ func main() {
 		DeferAction: func(ctx context.Context) error {
 			close(activitiesQueue)
 
+			subscriptionManager.Close()
 			cancelMongo()
 			stravaRepository.Client.Disconnect(ctx)
 

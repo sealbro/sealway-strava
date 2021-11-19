@@ -27,12 +27,17 @@ sealway strava integration
 
 - `cd ./graph`
 - `go run github.com/99designs/gqlgen generate`
-- Replace `model.` to `strava.` without mutations
+- Replace `model.` to `strava.` without mutations in `graph/generated/generated.go`
 
 ## Ideas
 
 - mutation reload all activities by athlete with limit
 - mutation download activities from strava by athlete with limit
+
+## Upgrade
+
+- change go version in `go.mod`
+- `go get -u all`
 
 ## Problems
 

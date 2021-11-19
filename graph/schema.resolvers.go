@@ -12,15 +12,23 @@ import (
 	"sealway-strava/strava"
 )
 
-func (r *mutationResolver) AddToken(ctx context.Context, input model.NewAthleteToken) (*string, error) {
-	err := r.Repository.UpsertToken(ctx, &api.StravaToken{
-		AthleteID: input.AthleteID,
-		Refresh:   input.Refresh,
-	})
+func (r *mutationResolver) AddToken(ctx context.Context, tokens []*model.NewAthleteToken) (*string, error) {
+	var errResult error
 
-	infra.Log.Infof("Refresh token for %s", input.AthleteID)
+	for _, input := range tokens {
+		err := r.Repository.UpsertToken(ctx, &api.StravaToken{
+			AthleteID: input.AthleteID,
+			Refresh:   input.Refresh,
+		})
 
-	return nil, err
+		infra.Log.Infof("Refresh token for [%d]", input.AthleteID)
+
+		if err != nil {
+			errResult = err
+		}
+	}
+
+	return nil, errResult
 }
 
 func (r *mutationResolver) ResendSavedActivities(ctx context.Context, athleteIds []int64, limit int64) (*string, error) {
@@ -61,15 +69,16 @@ func (r *queryResolver) Activities(ctx context.Context, athleteIds []int64, limi
 	return r.Repository.GetActivities(ctx, athleteIds, limit)
 }
 
-func (r *queryResolver) Token(ctx context.Context, athleteID int64) (*model.AthleteToken, error) {
+func (r *queryResolver) Token(ctx context.Context, athleteID int64) ([]*model.AthleteToken, error) {
 	token, err := r.StravaService.RefreshToken(athleteID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &model.AthleteToken{
-		Refresh: *token,
-	}, nil
+	return []*model.AthleteToken{{
+		AthleteID: athleteID,
+		Refresh:   *token,
+	}}, nil
 }
 
 func (r *subscriptionResolver) Activities(ctx context.Context) (<-chan []*strava.DetailedActivity, error) {

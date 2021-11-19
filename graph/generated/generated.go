@@ -48,7 +48,8 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	AthleteToken struct {
-		Refresh func(childComplexity int) int
+		AthleteID func(childComplexity int) int
+		Refresh   func(childComplexity int) int
 	}
 
 	DetailedActivity struct {
@@ -160,7 +161,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddToken                func(childComplexity int, input model.NewAthleteToken) int
+		AddToken                func(childComplexity int, tokens []*model.NewAthleteToken) int
 		ReloadAthleteActivities func(childComplexity int, athleteIds []int64, before *int64, after *int64, page *int64, limit int64) int
 		ResendSavedActivities   func(childComplexity int, athleteIds []int64, limit int64) int
 	}
@@ -250,14 +251,14 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	AddToken(ctx context.Context, input model.NewAthleteToken) (*string, error)
+	AddToken(ctx context.Context, tokens []*model.NewAthleteToken) (*string, error)
 	ResendSavedActivities(ctx context.Context, athleteIds []int64, limit int64) (*string, error)
 	ReloadAthleteActivities(ctx context.Context, athleteIds []int64, before *int64, after *int64, page *int64, limit int64) (*string, error)
 }
 type QueryResolver interface {
 	Activity(ctx context.Context, id int64) (*strava.DetailedActivity, error)
 	Activities(ctx context.Context, athleteIds []int64, limit int64) ([]*strava.DetailedActivity, error)
-	Token(ctx context.Context, athleteID int64) (*model.AthleteToken, error)
+	Token(ctx context.Context, athleteID int64) ([]*model.AthleteToken, error)
 }
 type SubscriptionResolver interface {
 	Activities(ctx context.Context) (<-chan []*strava.DetailedActivity, error)
@@ -277,6 +278,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "AthleteToken.athlete_id":
+		if e.complexity.AthleteToken.AthleteID == nil {
+			break
+		}
+
+		return e.complexity.AthleteToken.AthleteID(childComplexity), true
 
 	case "AthleteToken.refresh":
 		if e.complexity.AthleteToken.Refresh == nil {
@@ -946,7 +954,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddToken(childComplexity, args["input"].(model.NewAthleteToken)), true
+		return e.complexity.Mutation.AddToken(childComplexity, args["tokens"].([]*model.NewAthleteToken)), true
 
 	case "Mutation.reloadAthleteActivities":
 		if e.complexity.Mutation.ReloadAthleteActivities == nil {
@@ -1629,14 +1637,14 @@ type SummaryPrSegmentEffort {
 }
 
 type AthleteToken {
+    athlete_id: Int!
     refresh: String!
 }
-
 
 type Query {
   activity (id: Int!): DetailedActivity
   activities (athlete_ids: [Int!], limit: Int!): [DetailedActivity!]
-  token (athlete_id:Int!): AthleteToken!
+  token (athlete_id:Int!): [AthleteToken!]!
 }
 
 input NewAthleteToken {
@@ -1645,7 +1653,7 @@ input NewAthleteToken {
 }
 
 type Mutation {
-  addToken(input: NewAthleteToken!): Void
+  addToken(tokens: [NewAthleteToken!]!): Void
   resendSavedActivities(athlete_ids: [Int!], limit: Int!): Void
   reloadAthleteActivities(athlete_ids: [Int!], before: Int, after: Int, page: Int, limit: Int!): Void
 }
@@ -1663,15 +1671,15 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 func (ec *executionContext) field_Mutation_addToken_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.NewAthleteToken
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNNewAthleteToken2sealwayᚑstravaᚋgraphᚋmodelᚐNewAthleteToken(ctx, tmp)
+	var arg0 []*model.NewAthleteToken
+	if tmp, ok := rawArgs["tokens"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tokens"))
+		arg0, err = ec.unmarshalNNewAthleteToken2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐNewAthleteTokenᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["input"] = arg0
+	args["tokens"] = arg0
 	return args, nil
 }
 
@@ -1856,6 +1864,41 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _AthleteToken_athlete_id(ctx context.Context, field graphql.CollectedField, obj *model.AthleteToken) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AthleteToken",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AthleteID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
 
 func (ec *executionContext) _AthleteToken_refresh(ctx context.Context, field graphql.CollectedField, obj *model.AthleteToken) (ret graphql.Marshaler) {
 	defer func() {
@@ -5127,7 +5170,7 @@ func (ec *executionContext) _Mutation_addToken(ctx context.Context, field graphq
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AddToken(rctx, args["input"].(model.NewAthleteToken))
+		return ec.resolvers.Mutation().AddToken(rctx, args["tokens"].([]*model.NewAthleteToken))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5643,9 +5686,9 @@ func (ec *executionContext) _Query_token(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.AthleteToken)
+	res := resTmp.([]*model.AthleteToken)
 	fc.Result = res
-	return ec.marshalNAthleteToken2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐAthleteToken(ctx, field.Selections, res)
+	return ec.marshalNAthleteToken2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐAthleteTokenᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -8324,6 +8367,11 @@ func (ec *executionContext) _AthleteToken(ctx context.Context, sel ast.Selection
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("AthleteToken")
+		case "athlete_id":
+			out.Values[i] = ec._AthleteToken_athlete_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "refresh":
 			out.Values[i] = ec._AthleteToken_refresh(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -9641,8 +9689,48 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) marshalNAthleteToken2sealwayᚑstravaᚋgraphᚋmodelᚐAthleteToken(ctx context.Context, sel ast.SelectionSet, v model.AthleteToken) graphql.Marshaler {
-	return ec._AthleteToken(ctx, sel, &v)
+func (ec *executionContext) marshalNAthleteToken2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐAthleteTokenᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.AthleteToken) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAthleteToken2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐAthleteToken(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNAthleteToken2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐAthleteToken(ctx context.Context, sel ast.SelectionSet, v *model.AthleteToken) graphql.Marshaler {
@@ -9805,9 +9893,30 @@ func (ec *executionContext) marshalNInt2int64(ctx context.Context, sel ast.Selec
 	return res
 }
 
-func (ec *executionContext) unmarshalNNewAthleteToken2sealwayᚑstravaᚋgraphᚋmodelᚐNewAthleteToken(ctx context.Context, v interface{}) (model.NewAthleteToken, error) {
+func (ec *executionContext) unmarshalNNewAthleteToken2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐNewAthleteTokenᚄ(ctx context.Context, v interface{}) ([]*model.NewAthleteToken, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.NewAthleteToken, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNNewAthleteToken2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐNewAthleteToken(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNNewAthleteToken2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐNewAthleteToken(ctx context.Context, v interface{}) (*model.NewAthleteToken, error) {
 	res, err := ec.unmarshalInputNewAthleteToken(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {

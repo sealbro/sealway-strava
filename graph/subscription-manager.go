@@ -6,25 +6,47 @@ import (
 	"github.com/google/uuid"
 	"sealway-strava/infra"
 	"sealway-strava/strava"
+	"time"
 )
 
 type SubscriptionManager struct {
-	subscribers map[string]chan []*strava.DetailedActivity
+	ActivityBatchSize int
+	ActivityBatchTime time.Duration
+
+	subscribers      map[string]chan []*strava.DetailedActivity
+	outputActivities chan []*strava.DetailedActivity
+	inputActivity    chan *strava.DetailedActivity
+	closed           bool
 }
 
 func (manager *SubscriptionManager) Init() {
 	manager.subscribers = map[string]chan []*strava.DetailedActivity{}
+	manager.inputActivity = make(chan *strava.DetailedActivity)
+	manager.outputActivities = infra.BatchActivities(manager.inputActivity, manager.ActivityBatchSize, manager.ActivityBatchTime)
+
+	go func() {
+		for activities := range manager.outputActivities {
+			var activityIds string
+			for _, a := range activities {
+				activityIds = fmt.Sprintf("%d,%s", a.ID, activityIds)
+			}
+
+			infra.Log.Infof("Send activities [%s] to subscribers [%d]", activityIds, len(manager.subscribers))
+			for _, subscriber := range manager.subscribers {
+				subscriber <- activities
+			}
+		}
+	}()
 }
 
 func (manager *SubscriptionManager) Notify(activities []*strava.DetailedActivity) {
-	var activityIds string
-	for _, a := range activities {
-		activityIds = fmt.Sprintf("%d,%s", a.ID, activityIds)
+	if manager.closed {
+		infra.Log.Fatal("inputActivity was closed")
+		return
 	}
 
-	infra.Log.Infof("Send activities [%s] to subscribers [%d]", activityIds, len(manager.subscribers))
-	for _, ch := range manager.subscribers {
-		ch <- activities
+	for _, activity := range activities {
+		manager.inputActivity <- activity
 	}
 }
 
@@ -48,4 +70,10 @@ func (manager *SubscriptionManager) RemoveSubscriber(key string) {
 	close(manager.subscribers[key])
 
 	delete(manager.subscribers, key)
+}
+
+func (manager *SubscriptionManager) Close() {
+	manager.closed = true
+
+	close(manager.inputActivity)
 }

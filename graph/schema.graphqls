@@ -188,14 +188,14 @@ type SummaryPrSegmentEffort {
 }
 
 type AthleteToken {
+    athlete_id: Int!
     refresh: String!
 }
-
 
 type Query {
   activity (id: Int!): DetailedActivity
   activities (athlete_ids: [Int!], limit: Int!): [DetailedActivity!]
-  token (athlete_id:Int!): AthleteToken!
+  token (athlete_id:Int!): [AthleteToken!]!
 }
 
 input NewAthleteToken {
@@ -204,7 +204,7 @@ input NewAthleteToken {
 }
 
 type Mutation {
-  addToken(input: NewAthleteToken!): Void
+  addToken(tokens: [NewAthleteToken!]!): Void
   resendSavedActivities(athlete_ids: [Int!], limit: Int!): Void
   reloadAthleteActivities(athlete_ids: [Int!], before: Int, after: Int, page: Int, limit: Int!): Void
 }

@@ -7,7 +7,8 @@ import (
 )
 
 type AthleteToken struct {
-	Refresh string `json:"refresh"`
+	AthleteID int64  `json:"athlete_id"`
+	Refresh   string `json:"refresh"`
 }
 
 type DetailedActivity struct {

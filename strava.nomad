@@ -5,19 +5,14 @@ job "sealway-strava" {
   update {
     max_parallel = 1
 
-    min_healthy_time = "2m"
+    health_check = "checks"
+
+    min_healthy_time = "30s"
 
     healthy_deadline = "5m"
-
-    progress_deadline = "10m"
-
-    auto_revert = false
-
-    canary = 0
   }
 
   migrate {
-
     max_parallel = 1
 
     health_check = "checks"
@@ -48,23 +43,25 @@ job "sealway-strava" {
       check {
         type     = "http"
         port     = "app"
-        interval = "1m"
-        timeout  = "30s"
+        interval = "30s"
+        timeout  = "5s"
         path     = "/healthz"
+
+        check_restart {
+          limit = 3
+          grace = "90s"
+          ignore_warnings = true
+        }
       }
     }
 
     restart {
       attempts = 20
-      interval = "24h"
+      interval = "30m"
 
-      delay = "7m"
+      delay = "1m"
 
       mode = "fail"
-    }
-
-    ephemeral_disk {
-      size = 300
     }
 
     task "sealway-strava" {

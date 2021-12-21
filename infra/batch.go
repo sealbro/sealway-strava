@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// BatchActivities https://elliotchance.medium.com/batch-a-channel-by-size-or-time-in-go-92fa3098f65
 func BatchActivities(values <-chan *strava.DetailedActivity, maxItems int, maxTimeout time.Duration) chan []*strava.DetailedActivity {
 	batches := make(chan []*strava.DetailedActivity)
 

@@ -23,8 +23,8 @@ steps:
   privileged: true
   commands:
   - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-  - docker build -t sealway/strava .
-  - docker push sealway/strava
+  - docker buildx create --name multy-build --use
+  - docker buildx build -t sealway/strava --platform linux/amd64,linux/arm64 --push .
   environment:
     DOCKER_USERNAME:
       from_secret: vault_docker_username

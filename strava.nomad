@@ -1,6 +1,18 @@
 job "sealway-strava" {
   datacenters = ["home"]
+
   type = "service"
+
+  // affinity {
+  //   attribute = "${meta.os_architecture}"
+  //   value     = "amd64"
+  //   weight    = 100
+  // }
+
+  constraint {
+    attribute = "${attr.cpu.arch}"
+    value     = "arm64"
+  }
 
   update {
     max_parallel = 1

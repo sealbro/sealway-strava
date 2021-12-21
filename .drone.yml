@@ -19,7 +19,7 @@ steps:
       from_secret: grafana_url
 
 - name: docker-build-go
-  image: docker/buildx-bin
+  image: sealbro/docker
   privileged: true
   commands:
   - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD

@@ -13,7 +13,7 @@ require (
 	github.com/vektah/gqlparser/v2 v2.2.0
 	go.mongodb.org/mongo-driver v1.7.2
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
-	golang.org/x/tools v0.1.6
+	golang.org/x/tools v0.1.7
 )
 
 require (

@@ -1,5 +1,5 @@
 job "sealway-strava" {
-  datacenters = ["home"]
+  datacenters = ["digitalocean"]
 
   type = "service"
 
@@ -11,7 +11,7 @@ job "sealway-strava" {
 
   constraint {
     attribute = "${attr.cpu.arch}"
-    value     = "arm64"
+    value     = "amd64"
   }
 
   update {
@@ -40,10 +40,11 @@ job "sealway-strava" {
     network {
       port "app" {
         to = 8080
+        host_network = "private"
       }
 
       dns {
-        servers = ["172.17.0.1", "192.168.1.1"]
+        servers = ["172.17.0.1"]
       }
     }
 

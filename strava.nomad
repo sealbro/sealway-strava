@@ -1,5 +1,5 @@
 job "sealway-strava" {
-  datacenters = ["digitalocean"]
+  datacenters = ["lan"]
 
   type = "service"
 
@@ -38,24 +38,20 @@ job "sealway-strava" {
     count = 1
 
     network {
-      port "app" {
+      port "app-http" {
         to = 8080
         host_network = "private"
-      }
-
-      dns {
-        servers = ["172.17.0.1"]
       }
     }
 
     service {
       name = "integration-strava"
       tags = ["wss", "http", "sealway", "api", "private", "internal"]
-      port = "app"
+      port = "app-http"
 
       check {
         type     = "http"
-        port     = "app"
+        port     = "app-http"
         interval = "30s"
         timeout  = "5s"
         path     = "/healthz"
@@ -84,7 +80,7 @@ job "sealway-strava" {
         image = "sealway/strava"
         force_pull = true
 
-        ports = ["app"]
+        ports = ["app-http"]
 
         labels {
           from_nomad = "yes"
@@ -95,7 +91,7 @@ job "sealway-strava" {
         data = <<EOH
 SEALWAY_Services__Strava__Client={{with secret "applications/prod/default/Services/Strava"}}{{.Data.data.client_id}}{{end}}
 SEALWAY_Services__Strava__Secret={{with secret "applications/prod/default/Services/Strava"}}{{.Data.data.client_secret}}{{end}}
-SEALWAY_ConnectionStrings__Mongo__Connection={{ key "applications/prod/default/ConnectionStrings/Mongo" }}
+SEALWAY_ConnectionStrings__Mongodb=mongodb://mongo.service.consul
 EOH
 
         destination = "secrets/file.env"

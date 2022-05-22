@@ -8,8 +8,8 @@ RUN go build
 #FROM alpine as runtime
 FROM gcr.io/distroless/static as runtime
 
-WORKDIR /app
-
 COPY --from=builder /build/sealway-strava .
 
-ENTRYPOINT ./sealway-strava
+EXPOSE 8080
+
+CMD [ "./sealway-strava" ]

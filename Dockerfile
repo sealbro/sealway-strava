@@ -12,4 +12,4 @@ COPY --from=builder /build/sealway-strava .
 
 EXPOSE 8080
 
-CMD [ "./sealway-strava" ]
+ENTRYPOINT ./sealway-strava

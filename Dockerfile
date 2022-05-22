@@ -5,8 +5,7 @@ COPY . .
 
 RUN go build
 
-FROM alpine as runtime
-# FROM gcr.io/distroless/static as runtime
+FROM gcr.io/distroless/static as runtime
 
 COPY --from=builder /build/sealway-strava .
 

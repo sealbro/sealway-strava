@@ -3,30 +3,30 @@ module sealway-strava
 go 1.18
 
 require (
-	github.com/99designs/gqlgen v0.16.0
+	github.com/99designs/gqlgen v0.17.5
 	github.com/antihax/optional v1.0.0
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/urfave/cli/v2 v2.8.0
-	github.com/vektah/gqlparser/v2 v2.3.1
+	github.com/vektah/gqlparser/v2 v2.4.3
 	go.mongodb.org/mongo-driver v1.9.1
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
 	golang.org/x/tools v0.1.10
 )
 
 require (
-	github.com/agnivade/levenshtein v1.1.0 // indirect
+	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/antzucaro/matchr v0.0.0-20210222213004-b04723ef80f0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
-	github.com/golang/protobuf v1.4.2 // indirect
+	github.com/golang/protobuf v1.5.0 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
-	github.com/hashicorp/golang-lru v0.5.1 // indirect
+	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
-	github.com/matryer/moq v0.2.3 // indirect
-	github.com/mitchellh/mapstructure v1.2.3 // indirect
+	github.com/matryer/moq v0.2.7 // indirect
+	github.com/mitchellh/mapstructure v1.3.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
@@ -41,6 +41,6 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
-	google.golang.org/protobuf v1.25.0 // indirect
+	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

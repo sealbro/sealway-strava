@@ -29,7 +29,9 @@ sealway strava integration
 
 - `cd ./graph`
 - `go run github.com/99designs/gqlgen generate`
-- Replace `model.` to `strava.` without mutations in `graph/generated/generated.go`
+- Replace `model.` to `strava.` without mutations in `graph/generated/generated.go` and rollback `schema.resolvers.go`
+  - `strava.NewAthleteToken` => `model.NewAthleteToken`
+  - `strava.AthleteToken` => `model.AthleteToken`
 
 ## Ideas
 

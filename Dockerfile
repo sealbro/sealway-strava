@@ -1,14 +1,12 @@
-FROM golang:alpine as builder
+FROM golang:1.18 as builder
 
-WORKDIR /build
+WORKDIR /src
 COPY . .
 
-RUN go build
+RUN CGO_ENABLED=0 go build -o /bin/sealway-strava
 
 FROM gcr.io/distroless/static as runtime
 
-COPY --from=builder /build/sealway-strava .
+COPY --from=builder /bin/sealway-strava /
 
-EXPOSE 8080
-
-ENTRYPOINT /sealway-strava
+CMD ["/sealway-strava"]

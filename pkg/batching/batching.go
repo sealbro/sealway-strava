@@ -1,19 +1,21 @@
-package infra
+package batching
 
 import (
-	"sealway-strava/strava"
 	"time"
 )
 
-// BatchActivities https://elliotchance.medium.com/batch-a-channel-by-size-or-time-in-go-92fa3098f65
-func BatchActivities(values <-chan *strava.DetailedActivity, maxItems int, maxTimeout time.Duration) chan []*strava.DetailedActivity {
-	batches := make(chan []*strava.DetailedActivity)
+type BatchItem interface {
+}
+
+// Process https://elliotchance.medium.com/batch-a-channel-by-size-or-time-in-go-92fa3098f65
+func Process[TItem BatchItem](values <-chan TItem, maxItems int, maxTimeout time.Duration) chan []TItem {
+	batches := make(chan []TItem)
 
 	go func() {
 		defer close(batches)
 
 		for keepGoing := true; keepGoing; {
-			var batch []*strava.DetailedActivity
+			var batch []TItem
 			expire := time.After(maxTimeout)
 			for {
 				select {

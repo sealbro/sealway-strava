@@ -1,11 +1,11 @@
-package api
+package rest
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
-	"sealway-strava/infra"
+	"sealway-strava/pkg/logger"
 )
 
 type DefaultApi struct {
@@ -26,7 +26,7 @@ func (api *DefaultApi) Prefix(serverName string, path string) string {
 }
 
 func respondWithError(w http.ResponseWriter, code int, message string) {
-	infra.Log.Error(message)
+	logger.Log.Error(message)
 
 	respondWithJSON(w, code, map[string]string{"error": message})
 }

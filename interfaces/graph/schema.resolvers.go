@@ -5,23 +5,23 @@ package graph
 
 import (
 	"context"
-	api "sealway-strava/api/model"
-	"sealway-strava/graph/generated"
-	"sealway-strava/graph/model"
-	"sealway-strava/infra"
-	"sealway-strava/strava"
+	"sealway-strava/domain"
+	"sealway-strava/domain/strava"
+	"sealway-strava/interfaces/graph/generated"
+	"sealway-strava/interfaces/graph/model"
+	"sealway-strava/pkg/logger"
 )
 
 func (r *mutationResolver) AddToken(ctx context.Context, tokens []*model.NewAthleteToken) (*string, error) {
 	var errResult error
 
 	for _, input := range tokens {
-		err := r.Repository.UpsertToken(ctx, &api.StravaToken{
+		err := r.Repository.UpsertToken(ctx, &domain.StravaToken{
 			AthleteID: input.AthleteID,
 			Refresh:   input.Refresh,
 		})
 
-		infra.Log.Infof("Refresh token for [%d]", input.AthleteID)
+		logger.Log.Infof("Refresh token for [%d]", input.AthleteID)
 
 		if err != nil {
 			errResult = err
@@ -48,7 +48,7 @@ func (r *mutationResolver) ReloadAthleteActivities(ctx context.Context, athleteI
 			errResult = err
 		} else {
 			for _, activity := range activities {
-				r.ActivitiesQueue <- api.StravaSubscriptionData{
+				r.ActivitiesQueue <- domain.StravaSubscriptionData{
 					AthleteId:  athleteId,
 					ActivityId: activity.Id,
 					Type:       "activity",

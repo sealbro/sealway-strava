@@ -1,31 +1,30 @@
-package main
+package usercase
 
 import (
 	"fmt"
 	"github.com/avast/retry-go"
-	"sealway-strava/api"
-	"sealway-strava/api/model"
-	"sealway-strava/graph"
-	"sealway-strava/infra"
-	"sealway-strava/strava"
+	"sealway-strava/domain"
+	"sealway-strava/domain/strava"
+	"sealway-strava/pkg/logger"
+	"sealway-strava/repository"
 	"time"
 )
 
 type BackgroundWorker struct {
-	StravaRepository    *api.StravaRepository
-	StravaService       *api.StravaService
-	SubscriptionManager *graph.SubscriptionManager
+	StravaRepository    *repository.StravaRepository
+	StravaService       *StravaService
+	SubscriptionManager *SubscriptionManager
 }
 
-func (worker *BackgroundWorker) RunBackgroundWorker() chan model.StravaSubscriptionData {
-	inboundQueue := make(chan model.StravaSubscriptionData)
+func (worker *BackgroundWorker) RunBackgroundWorker() chan domain.StravaSubscriptionData {
+	inboundQueue := make(chan domain.StravaSubscriptionData)
 
 	go worker.process(inboundQueue)
 
 	return inboundQueue
 }
 
-func (worker *BackgroundWorker) process(inboundQueue chan model.StravaSubscriptionData) {
+func (worker *BackgroundWorker) process(inboundQueue chan domain.StravaSubscriptionData) {
 	for {
 		// check exit
 		data, ok := <-inboundQueue
@@ -35,17 +34,17 @@ func (worker *BackgroundWorker) process(inboundQueue chan model.StravaSubscripti
 
 		err := retry.Do(
 			func() error {
-				infra.Log.Infof("Start attempt process for activity [%d] with athlete [%d]", data.ActivityId, data.AthleteId)
+				logger.Log.Infof("Start attempt process for activity [%d] with athlete [%d]", data.ActivityId, data.AthleteId)
 				activity, err := worker.processTask(data)
 				if err != nil {
-					infra.Log.Error(err.Error())
+					logger.Log.Error(err.Error())
 				}
 
 				if activity != nil {
 					worker.SubscriptionManager.Notify([]*strava.DetailedActivity{activity})
 				}
 
-				infra.Log.Infof("Finish attempt process for activity [%d] with athlete [%d]", data.ActivityId, data.AthleteId)
+				logger.Log.Infof("Finish attempt process for activity [%d] with athlete [%d]", data.ActivityId, data.AthleteId)
 
 				return err
 			},
@@ -57,17 +56,17 @@ func (worker *BackgroundWorker) process(inboundQueue chan model.StravaSubscripti
 		)
 
 		if err != nil {
-			infra.Log.Error(err.Error())
+			logger.Log.Error(err.Error())
 		}
 	}
 }
 
-func (worker *BackgroundWorker) processTask(data model.StravaSubscriptionData) (*strava.DetailedActivity, error) {
+func (worker *BackgroundWorker) processTask(data domain.StravaSubscriptionData) (*strava.DetailedActivity, error) {
 	// convert athlete id
 	athleteId := data.AthleteId
 
 	// save subscription
-	if err := worker.StravaRepository.AddNewSubscription(&model.StravaSubscription{
+	if err := worker.StravaRepository.AddNewSubscription(&domain.StravaSubscription{
 		ExpireAt: time.Now().Add(7 * 24 * time.Hour),
 		Data:     data,
 	}); err != nil {

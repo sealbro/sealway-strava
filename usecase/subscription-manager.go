@@ -1,11 +1,12 @@
-package graph
+package usercase
 
 import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"sealway-strava/infra"
-	"sealway-strava/strava"
+	"sealway-strava/domain/strava"
+	"sealway-strava/pkg/batching"
+	"sealway-strava/pkg/logger"
 	"time"
 )
 
@@ -22,7 +23,7 @@ type SubscriptionManager struct {
 func (manager *SubscriptionManager) Init() {
 	manager.subscribers = map[string]chan []*strava.DetailedActivity{}
 	manager.inputActivity = make(chan *strava.DetailedActivity)
-	manager.outputActivities = infra.BatchActivities(manager.inputActivity, manager.ActivityBatchSize, manager.ActivityBatchTime)
+	manager.outputActivities = batching.Process(manager.inputActivity, manager.ActivityBatchSize, manager.ActivityBatchTime)
 
 	go func() {
 		for activities := range manager.outputActivities {
@@ -31,7 +32,7 @@ func (manager *SubscriptionManager) Init() {
 				activityIds = fmt.Sprintf("%d,%s", a.ID, activityIds)
 			}
 
-			infra.Log.Infof("Send activities [%s] to subscribers [%d]", activityIds, len(manager.subscribers))
+			logger.Log.Infof("Send activities [%s] to subscribers [%d]", activityIds, len(manager.subscribers))
 			for _, subscriber := range manager.subscribers {
 				subscriber <- activities
 			}
@@ -41,7 +42,7 @@ func (manager *SubscriptionManager) Init() {
 
 func (manager *SubscriptionManager) Notify(activities []*strava.DetailedActivity) {
 	if manager.closed {
-		infra.Log.Fatal("inputActivity was closed")
+		logger.Log.Fatal("inputActivity was closed")
 		return
 	}
 
@@ -55,12 +56,12 @@ func (manager *SubscriptionManager) AddSubscriber(ctx context.Context) chan []*s
 	ch := make(chan []*strava.DetailedActivity)
 	manager.subscribers[key] = ch
 
-	infra.Log.Infof("Added new subscriber %s", key)
+	logger.Log.Infof("Added new subscriber %s", key)
 
 	go func() {
 		<-ctx.Done()
 		manager.RemoveSubscriber(key)
-		infra.Log.Infof("Removed subscriber %s", key)
+		logger.Log.Infof("Removed subscriber %s", key)
 	}()
 
 	return ch

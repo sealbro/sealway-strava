@@ -1,10 +1,11 @@
-package infra
+package graceful
 
 import (
 	"context"
 	"net/http"
 	"os"
 	"os/signal"
+	"sealway-strava/pkg/logger"
 	"syscall"
 	"time"
 )
@@ -21,26 +22,26 @@ func (graceful *Graceful) RunAndWait() {
 
 	go func() {
 		if err := graceful.StartAction(); err != nil && err != http.ErrServerClosed {
-			Log.Fatalf("listen: %s\n", err)
+			logger.Log.Fatalf("listen: %s\n", err)
 		}
 	}()
-	Log.Info("Server Started")
+	logger.Log.Info("Server Started")
 
 	<-done
-	Log.Info("Server Stopped")
+	logger.Log.Info("Server Stopped")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer func() {
 		if err := graceful.DeferAction(ctx); err != nil {
-			Log.Fatalf("Server  Failed:%+v", err)
+			logger.Log.Fatalf("Server  Failed:%+v", err)
 		}
 		cancel()
 	}()
 
 	if err := graceful.ShutdownAction(ctx); err != nil {
-		Log.Fatalf("Server Shutdown Failed:%+v", err)
+		logger.Log.Fatalf("Server Shutdown Failed:%+v", err)
 	}
-	Log.Info("Server Exited Properly")
+	logger.Log.Info("Server Exited Properly")
 }
 
 func EnvOrDefault(key, fallback string) string {

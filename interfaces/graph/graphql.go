@@ -9,18 +9,16 @@ import (
 	_ "golang.org/x/tools/go/packages"
 	_ "golang.org/x/tools/imports"
 	"net/http"
+	"sealway-strava/interfaces/graph/generated"
+	"sealway-strava/interfaces/rest"
 	"time"
 
-	"sealway-strava/api"
-	"sealway-strava/graph/generated"
-
 	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/playground"
 )
 
 type GraphqlApi struct {
 	Resolvers *Resolver
-	*api.DefaultApi
+	*rest.DefaultApi
 }
 
 func (server *GraphqlApi) RegisterGraphQl() *handler.Server {
@@ -41,7 +39,7 @@ func (server *GraphqlApi) RegisterGraphQl() *handler.Server {
 	srv.Use(extension.Introspection{})
 
 	endpoint := server.Prefix(serverName, "/query")
-	server.Router.Handle(server.Prefix(serverName, "/"), playground.Handler("GraphQL playground", endpoint))
+	server.Router.Handle(server.Prefix(serverName, "/"), PlaygroundHandler("GraphQL playground", endpoint))
 	server.Router.Handle(endpoint, srv)
 
 	return srv

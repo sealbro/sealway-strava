@@ -5,48 +5,49 @@ import (
 	"github.com/gorilla/mux"
 	"net/http"
 	"os"
-	"sealway-strava/api"
-	"sealway-strava/graph"
-	"sealway-strava/infra"
-	"sealway-strava/strava"
+	"sealway-strava/domain/strava"
+	"sealway-strava/interfaces/graph"
+	"sealway-strava/interfaces/rest"
+	"sealway-strava/pkg/graceful"
+	"sealway-strava/repository"
+	"sealway-strava/usecase"
 	"strconv"
 	"time"
 )
 
-// ENVs
-var connectionString = infra.EnvOrDefault("SEALWAY_ConnectionStrings__Mongo__Connection", "mongodb://localhost:27017")
+var connectionString = graceful.EnvOrDefault("SEALWAY_ConnectionStrings__Mongo__Connection", "mongodb://localhost:27017")
 var stravaClientId = os.Getenv("SEALWAY_Services__Strava__Client")
 var stravaSecretId = os.Getenv("SEALWAY_Services__Strava__Secret")
 
-var activityBatchSize, _ = strconv.Atoi(infra.EnvOrDefault("ACTIVITY_BATCH_SIZE", "50"))
-var activityBatchTime, _ = time.ParseDuration(infra.EnvOrDefault("ACTIVITY_BATCH_TIME", "45s"))
+var activityBatchSize, _ = strconv.Atoi(graceful.EnvOrDefault("ACTIVITY_BATCH_SIZE", "50"))
+var activityBatchTime, _ = time.ParseDuration(graceful.EnvOrDefault("ACTIVITY_BATCH_TIME", "45s"))
 
-var port = infra.EnvOrDefault("PORT", "8080")
-var applicationSlug = infra.EnvOrDefault("SLUG", "integration-strava")
+var port = graceful.EnvOrDefault("PORT", "8080")
+var applicationSlug = graceful.EnvOrDefault("SLUG", "integration-strava")
 
 func main() {
 	stravaClient := strava.NewAPIClient(strava.NewConfiguration())
 
 	ctx, cancelMongo := context.WithTimeout(context.Background(), 10*time.Second)
-	err, stravaRepository := api.InitStravaRepository(connectionString, ctx)
+	err, stravaRepository := repository.InitStravaRepository(connectionString, ctx)
 	if err != nil {
 		panic(err)
 	}
 
-	subscriptionManager := &graph.SubscriptionManager{
+	subscriptionManager := &usercase.SubscriptionManager{
 		ActivityBatchSize: activityBatchSize,
 		ActivityBatchTime: activityBatchTime,
 	}
 	subscriptionManager.Init()
 
-	var stravaService = &api.StravaService{
+	var stravaService = &usercase.StravaService{
 		ClientId:         stravaClientId,
 		SecretId:         stravaSecretId,
 		StravaClient:     stravaClient,
 		StravaRepository: stravaRepository,
 	}
 
-	var backgroundWorker = &BackgroundWorker{
+	var backgroundWorker = &usercase.BackgroundWorker{
 		SubscriptionManager: subscriptionManager,
 		StravaService:       stravaService,
 		StravaRepository:    stravaRepository,
@@ -54,12 +55,12 @@ func main() {
 	activitiesQueue := backgroundWorker.RunBackgroundWorker()
 
 	router := mux.NewRouter()
-	defaultApi := &api.DefaultApi{
+	defaultApi := &rest.DefaultApi{
 		Router:          router,
 		ApplicationSlug: applicationSlug,
 	}
 
-	var restApi = &api.SubscriptionApi{
+	var restApi = &rest.SubscriptionApi{
 		ActivitiesQueue: activitiesQueue,
 		DefaultApi:      defaultApi,
 	}
@@ -82,7 +83,7 @@ func main() {
 		Handler: router,
 	}
 
-	var graceful = &infra.Graceful{
+	var graceful = &graceful.Graceful{
 		StartAction: func() error {
 			return apiServer.ListenAndServe()
 		},

@@ -1,4 +1,4 @@
-package api
+package repository
 
 import (
 	"context"
@@ -6,9 +6,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"sealway-strava/api/model"
-	"sealway-strava/infra"
-	"sealway-strava/strava"
+	"sealway-strava/domain"
+	"sealway-strava/domain/strava"
+	"sealway-strava/pkg/logger"
 	"time"
 )
 
@@ -24,7 +24,7 @@ type StravaRepository struct {
 func InitStravaRepository(connectionString string, ctx context.Context) (error, *StravaRepository) {
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(connectionString))
 	if err != nil {
-		infra.Log.Fatal(err.Error())
+		logger.Log.Fatal(err.Error())
 		return err, nil
 	}
 
@@ -53,14 +53,14 @@ func (repository *StravaRepository) AddIndex(dbName string, collection string, i
 		return err
 	}
 
-	infra.Log.Tracef("Index created: %s", indexName)
+	logger.Log.Tracef("Index created: %s", indexName)
 
 	return nil
 }
 
 // Operations
 
-func (repository *StravaRepository) AddNewSubscription(data *model.StravaSubscription) error {
+func (repository *StravaRepository) AddNewSubscription(data *domain.StravaSubscription) error {
 	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaSubscriptionCollectionName)
 	ctx, cancel := createTimeoutContext()
 	defer cancel()
@@ -97,7 +97,7 @@ func (repository *StravaRepository) AddDetailedActivity(activity *strava.Detaile
 	return err
 }
 
-func (repository *StravaRepository) UpsertToken(innerCtx context.Context, token *model.StravaToken) error {
+func (repository *StravaRepository) UpsertToken(innerCtx context.Context, token *domain.StravaToken) error {
 	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaTokenCollectionName)
 	ctx, cancel := createTimeoutFromInnerContext(innerCtx)
 	defer cancel()
@@ -115,12 +115,12 @@ func (repository *StravaRepository) UpsertToken(innerCtx context.Context, token 
 	return nil
 }
 
-func (repository *StravaRepository) GetToken(athleteId int64) (*model.StravaToken, error) {
+func (repository *StravaRepository) GetToken(athleteId int64) (*domain.StravaToken, error) {
 	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaTokenCollectionName)
 	ctx, cancel := createTimeoutContext()
 	defer cancel()
 
-	var token *model.StravaToken
+	var token *domain.StravaToken
 	err := collection.FindOne(ctx, bson.D{{"_id", athleteId}}).Decode(&token)
 
 	return token, err
@@ -157,7 +157,7 @@ func (repository *StravaRepository) GetActivities(innerCtx context.Context, athl
 		var activity *strava.DetailedActivity
 		err := cursor.Decode(&activity)
 		if err != nil {
-			infra.Log.Tracef("decode activity : %s", err.Error())
+			logger.Log.Tracef("decode activity : %s", err.Error())
 		}
 		activities = append(activities, activity)
 	}

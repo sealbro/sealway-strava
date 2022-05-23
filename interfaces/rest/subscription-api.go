@@ -1,16 +1,17 @@
-package api
+package rest
 
 import (
 	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
-	"sealway-strava/api/model"
-	"sealway-strava/infra"
+	"sealway-strava/domain"
+	"sealway-strava/pkg/logger"
 	"time"
 )
 
-var stravaQuota = model.StravaQuota{
+// SyncStravaQuota todo race-condition
+var SyncStravaQuota = domain.StravaQuota{
 	Limit15min: 100,
 	LimitDay:   1000,
 	Usage15min: 0,
@@ -19,12 +20,12 @@ var stravaQuota = model.StravaQuota{
 }
 
 type SubscriptionApi struct {
-	ActivitiesQueue chan model.StravaSubscriptionData
+	ActivitiesQueue chan domain.StravaSubscriptionData
 	*DefaultApi
 }
 
 func (api *SubscriptionApi) RegisterApiRoutes() {
-	var serverName = "api"
+	var serverName = "interfaces"
 	api.Router.HandleFunc(api.Prefix(serverName, "/quota"), api.quota).Methods("GET")
 	api.Router.HandleFunc(api.Prefix(serverName, "/subscription"), api.verify).Methods("GET")
 	api.Router.HandleFunc(api.Prefix(serverName, "/subscription"), api.subscription).Methods("POST")
@@ -36,17 +37,17 @@ func (api *SubscriptionApi) RegisterApiRoutes() {
 func (api *SubscriptionApi) verify(w http.ResponseWriter, r *http.Request) {
 	keys, _ := r.URL.Query()["hub.challenge"]
 
-	infra.Log.Infof("Verify [%s]", r.URL.Path)
+	logger.Log.Infof("Verify [%s]", r.URL.Path)
 
-	respondWithJSON(w, http.StatusOK, &model.StravaVerify{Challenge: keys[0]})
+	respondWithJSON(w, http.StatusOK, &domain.StravaVerify{Challenge: keys[0]})
 }
 
 func (api *SubscriptionApi) subscription(w http.ResponseWriter, r *http.Request) {
 
 	all, _ := io.ReadAll(r.Body)
-	infra.Log.Infof("Request to %s - %s", r.RequestURI, string(all))
+	logger.Log.Infof("Request to %s - %s", r.RequestURI, string(all))
 
-	var data model.StravaSubscriptionData
+	var data domain.StravaSubscriptionData
 	reader := bytes.NewReader(all)
 	decoder := json.NewDecoder(reader)
 	if err := decoder.Decode(&data); err != nil {
@@ -62,5 +63,5 @@ func (api *SubscriptionApi) subscription(w http.ResponseWriter, r *http.Request)
 }
 
 func (api *SubscriptionApi) quota(w http.ResponseWriter, r *http.Request) {
-	respondWithJSON(w, http.StatusOK, &stravaQuota)
+	respondWithJSON(w, http.StatusOK, &SyncStravaQuota)
 }

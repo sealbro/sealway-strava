@@ -1,4 +1,4 @@
-package api
+package usercase
 
 import (
 	"bytes"
@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"github.com/antihax/optional"
 	"net/http"
-	"sealway-strava/api/model"
-	"sealway-strava/strava"
+	"sealway-strava/domain"
+	"sealway-strava/domain/strava"
+	"sealway-strava/interfaces/rest"
+	"sealway-strava/repository"
 	"strconv"
 	"strings"
 	"time"
@@ -18,11 +20,11 @@ type StravaService struct {
 	StravaClient     *strava.APIClient
 	ClientId         string
 	SecretId         string
-	StravaRepository *StravaRepository
+	StravaRepository *repository.StravaRepository
 }
 
 func (service *StravaService) GetActivityById(athleteId int64, activityId int64) (*strava.DetailedActivity, error) {
-	err := stravaQuota.CheckQuota()
+	err := rest.SyncStravaQuota.CheckQuota()
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +45,7 @@ func (service *StravaService) GetActivityById(athleteId int64, activityId int64)
 }
 
 func (service *StravaService) GetActivitiesByAthleteId(ctx context.Context, athleteId int64, before *int64, after *int64, page *int64, limit int64) ([]strava.SummaryActivity, error) {
-	err := stravaQuota.CheckQuota()
+	err := rest.SyncStravaQuota.CheckQuota()
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +160,7 @@ func updateQuota(response *http.Response) {
 	usage15min, _ := strconv.Atoi(usageValues[0])
 	usageDay, _ := strconv.Atoi(usageValues[1])
 
-	stravaQuota = model.StravaQuota{
+	rest.SyncStravaQuota = domain.StravaQuota{
 		Limit15min: limit15min,
 		LimitDay:   limitDay,
 		Usage15min: usage15min,

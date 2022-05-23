@@ -8,8 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"sealway-strava/graph/model"
-	"sealway-strava/strava"
+	strava2 "sealway-strava/domain/strava"
+	"sealway-strava/interfaces/graph/model"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -257,12 +257,12 @@ type MutationResolver interface {
 	ReloadAthleteActivities(ctx context.Context, athleteIds []int64, before *int64, after *int64, page *int64, limit int64) (*string, error)
 }
 type QueryResolver interface {
-	Activity(ctx context.Context, id int64) (*strava.DetailedActivity, error)
-	Activities(ctx context.Context, athleteIds []int64, limit int64) ([]*strava.DetailedActivity, error)
+	Activity(ctx context.Context, id int64) (*strava2.DetailedActivity, error)
+	Activities(ctx context.Context, athleteIds []int64, limit int64) ([]*strava2.DetailedActivity, error)
 	Token(ctx context.Context, athleteID int64) ([]*model.AthleteToken, error)
 }
 type SubscriptionResolver interface {
-	Activities(ctx context.Context) (<-chan []*strava.DetailedActivity, error)
+	Activities(ctx context.Context) (<-chan []*strava2.DetailedActivity, error)
 }
 
 type executableSchema struct {
@@ -1959,7 +1959,7 @@ func (ec *executionContext) fieldContext_AthleteToken_refresh(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_id(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_id(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2003,7 +2003,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_id(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_external_id(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_external_id(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_external_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2047,7 +2047,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_external_id(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_upload_id(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_upload_id(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_upload_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2091,7 +2091,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_upload_id(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_athlete(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_athlete(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_athlete(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2114,7 +2114,7 @@ func (ec *executionContext) _DetailedActivity_athlete(ctx context.Context, field
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*strava.MetaAthlete)
+	res := resTmp.(*strava2.MetaAthlete)
 	fc.Result = res
 	return ec.marshalOMetaAthlete2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐMetaAthlete(ctx, field.Selections, res)
 }
@@ -2136,7 +2136,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_athlete(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_name(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_name(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_name(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2180,7 +2180,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_name(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_distance(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_distance(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_distance(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2224,7 +2224,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_distance(ctx context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_moving_time(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_moving_time(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_moving_time(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2268,7 +2268,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_moving_time(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_elapsed_time(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_elapsed_time(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_elapsed_time(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2312,7 +2312,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_elapsed_time(ctx conte
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_total_elevation_gain(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_total_elevation_gain(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_total_elevation_gain(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2356,7 +2356,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_total_elevation_gain(c
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_elev_high(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_elev_high(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_elev_high(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2400,7 +2400,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_elev_high(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_elev_low(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_elev_low(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_elev_low(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2444,7 +2444,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_elev_low(ctx context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_type(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_type(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_type(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2485,7 +2485,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_type(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_start_date(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_start_date(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_start_date(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2529,7 +2529,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_start_date(ctx context
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_start_date_local(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_start_date_local(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_start_date_local(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2573,7 +2573,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_start_date_local(ctx c
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_timezone(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_timezone(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_timezone(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2617,7 +2617,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_timezone(ctx context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_start_latlng(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_start_latlng(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_start_latlng(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2661,7 +2661,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_start_latlng(ctx conte
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_end_latlng(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_end_latlng(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_end_latlng(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2705,7 +2705,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_end_latlng(ctx context
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_achievement_count(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_achievement_count(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_achievement_count(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2749,7 +2749,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_achievement_count(ctx 
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_kudos_count(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_kudos_count(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_kudos_count(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2793,7 +2793,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_kudos_count(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_comment_count(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_comment_count(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_comment_count(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2837,7 +2837,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_comment_count(ctx cont
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_athlete_count(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_athlete_count(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_athlete_count(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2881,7 +2881,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_athlete_count(ctx cont
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_photo_count(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_photo_count(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_photo_count(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2925,7 +2925,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_photo_count(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_total_photo_count(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_total_photo_count(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_total_photo_count(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2969,7 +2969,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_total_photo_count(ctx 
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_map(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_map(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_map(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2992,7 +2992,7 @@ func (ec *executionContext) _DetailedActivity_map(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*strava.PolylineMap)
+	res := resTmp.(*strava2.PolylineMap)
 	fc.Result = res
 	return ec.marshalOPolylineMap2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐPolylineMap(ctx, field.Selections, res)
 }
@@ -3018,7 +3018,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_map(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_trainer(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_trainer(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_trainer(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3062,7 +3062,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_trainer(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_commute(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_commute(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_commute(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3106,7 +3106,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_commute(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_manual(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_manual(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_manual(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3150,7 +3150,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_manual(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_private(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_private(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_private(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3194,7 +3194,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_private(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_flagged(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_flagged(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_flagged(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3238,7 +3238,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_flagged(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_workout_type(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_workout_type(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_workout_type(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3282,7 +3282,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_workout_type(ctx conte
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_upload_id_str(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_upload_id_str(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_upload_id_str(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3326,7 +3326,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_upload_id_str(ctx cont
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_average_speed(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_average_speed(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_average_speed(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3370,7 +3370,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_average_speed(ctx cont
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_max_speed(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_max_speed(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_max_speed(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3414,7 +3414,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_max_speed(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_has_kudoed(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_has_kudoed(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_has_kudoed(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3458,7 +3458,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_has_kudoed(ctx context
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_gear_id(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_gear_id(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_gear_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3502,7 +3502,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_gear_id(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_kilojoules(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_kilojoules(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_kilojoules(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3546,7 +3546,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_kilojoules(ctx context
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_average_watts(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_average_watts(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_average_watts(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3590,7 +3590,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_average_watts(ctx cont
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_device_watts(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_device_watts(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_device_watts(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3634,7 +3634,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_device_watts(ctx conte
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_max_watts(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_max_watts(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_max_watts(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3678,7 +3678,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_max_watts(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_weighted_average_watts(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_weighted_average_watts(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_weighted_average_watts(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3722,7 +3722,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_weighted_average_watts
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_description(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_description(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_description(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3766,7 +3766,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_description(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_photos(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_photos(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_photos(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3789,7 +3789,7 @@ func (ec *executionContext) _DetailedActivity_photos(ctx context.Context, field 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*strava.PhotosSummary)
+	res := resTmp.(*strava2.PhotosSummary)
 	fc.Result = res
 	return ec.marshalOPhotosSummary2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐPhotosSummary(ctx, field.Selections, res)
 }
@@ -3813,7 +3813,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_photos(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_gear(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_gear(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_gear(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3836,7 +3836,7 @@ func (ec *executionContext) _DetailedActivity_gear(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*strava.SummaryGear)
+	res := resTmp.(*strava2.SummaryGear)
 	fc.Result = res
 	return ec.marshalOSummaryGear2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSummaryGear(ctx, field.Selections, res)
 }
@@ -3866,7 +3866,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_gear(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_calories(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_calories(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_calories(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3910,7 +3910,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_calories(ctx context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_segment_efforts(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_segment_efforts(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_segment_efforts(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3933,7 +3933,7 @@ func (ec *executionContext) _DetailedActivity_segment_efforts(ctx context.Contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*strava.DetailedSegmentEffort)
+	res := resTmp.([]*strava2.DetailedSegmentEffort)
 	fc.Result = res
 	return ec.marshalODetailedSegmentEffort2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffort(ctx, field.Selections, res)
 }
@@ -3997,7 +3997,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_segment_efforts(ctx co
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_device_name(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_device_name(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_device_name(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4041,7 +4041,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_device_name(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_embed_token(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_embed_token(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_embed_token(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4085,7 +4085,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_embed_token(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_splits_metric(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_splits_metric(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_splits_metric(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4108,7 +4108,7 @@ func (ec *executionContext) _DetailedActivity_splits_metric(ctx context.Context,
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*strava.Split)
+	res := resTmp.([]*strava2.Split)
 	fc.Result = res
 	return ec.marshalOSplit2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplit(ctx, field.Selections, res)
 }
@@ -4142,7 +4142,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_splits_metric(ctx cont
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_splits_standard(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_splits_standard(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_splits_standard(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4165,7 +4165,7 @@ func (ec *executionContext) _DetailedActivity_splits_standard(ctx context.Contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*strava.Split)
+	res := resTmp.([]*strava2.Split)
 	fc.Result = res
 	return ec.marshalOSplit2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplit(ctx, field.Selections, res)
 }
@@ -4199,7 +4199,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_splits_standard(ctx co
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_laps(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_laps(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_laps(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4222,7 +4222,7 @@ func (ec *executionContext) _DetailedActivity_laps(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*strava.Lap)
+	res := resTmp.([]*strava2.Lap)
 	fc.Result = res
 	return ec.marshalOLap2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐLap(ctx, field.Selections, res)
 }
@@ -4278,7 +4278,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_laps(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedActivity_best_efforts(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedActivity_best_efforts(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedActivity_best_efforts(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4301,7 +4301,7 @@ func (ec *executionContext) _DetailedActivity_best_efforts(ctx context.Context, 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*strava.DetailedSegmentEffort)
+	res := resTmp.([]*strava2.DetailedSegmentEffort)
 	fc.Result = res
 	return ec.marshalODetailedSegmentEffort2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffort(ctx, field.Selections, res)
 }
@@ -4365,7 +4365,7 @@ func (ec *executionContext) fieldContext_DetailedActivity_best_efforts(ctx conte
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_id(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_id(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4409,7 +4409,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_id(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_activity_id(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_activity_id(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_activity_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4453,7 +4453,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_activity_id(ctx c
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_elapsed_time(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_elapsed_time(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_elapsed_time(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4497,7 +4497,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_elapsed_time(ctx 
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_start_date(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_start_date(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_start_date(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4541,7 +4541,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_start_date(ctx co
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_start_date_local(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_start_date_local(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_start_date_local(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4585,7 +4585,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_start_date_local(
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_distance(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_distance(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_distance(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4629,7 +4629,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_distance(ctx cont
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_is_kom(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_is_kom(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_is_kom(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4673,7 +4673,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_is_kom(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_name(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_name(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_name(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4717,7 +4717,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_name(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_activity(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_activity(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_activity(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4740,7 +4740,7 @@ func (ec *executionContext) _DetailedSegmentEffort_activity(ctx context.Context,
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*strava.MetaActivity)
+	res := resTmp.(*strava2.MetaActivity)
 	fc.Result = res
 	return ec.marshalOMetaActivity2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐMetaActivity(ctx, field.Selections, res)
 }
@@ -4762,7 +4762,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_activity(ctx cont
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_athlete(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_athlete(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_athlete(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4785,7 +4785,7 @@ func (ec *executionContext) _DetailedSegmentEffort_athlete(ctx context.Context, 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*strava.MetaAthlete)
+	res := resTmp.(*strava2.MetaAthlete)
 	fc.Result = res
 	return ec.marshalOMetaAthlete2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐMetaAthlete(ctx, field.Selections, res)
 }
@@ -4807,7 +4807,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_athlete(ctx conte
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_moving_time(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_moving_time(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_moving_time(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4851,7 +4851,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_moving_time(ctx c
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_start_index(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_start_index(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_start_index(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4895,7 +4895,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_start_index(ctx c
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_end_index(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_end_index(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_end_index(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4939,7 +4939,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_end_index(ctx con
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_average_cadence(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_average_cadence(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_average_cadence(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -4983,7 +4983,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_average_cadence(c
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_average_watts(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_average_watts(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_average_watts(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5027,7 +5027,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_average_watts(ctx
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_device_watts(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_device_watts(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_device_watts(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5071,7 +5071,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_device_watts(ctx 
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_average_heartrate(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_average_heartrate(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_average_heartrate(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5115,7 +5115,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_average_heartrate
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_max_heartrate(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_max_heartrate(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_max_heartrate(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5159,7 +5159,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_max_heartrate(ctx
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_segment(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_segment(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_segment(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5182,7 +5182,7 @@ func (ec *executionContext) _DetailedSegmentEffort_segment(ctx context.Context, 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*strava.SummarySegment)
+	res := resTmp.(*strava2.SummarySegment)
 	fc.Result = res
 	return ec.marshalOSummarySegment2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSummarySegment(ctx, field.Selections, res)
 }
@@ -5236,7 +5236,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_segment(ctx conte
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_kom_rank(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_kom_rank(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_kom_rank(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5280,7 +5280,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_kom_rank(ctx cont
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_pr_rank(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_pr_rank(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_pr_rank(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5324,7 +5324,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_pr_rank(ctx conte
 	return fc, nil
 }
 
-func (ec *executionContext) _DetailedSegmentEffort_hidden(ctx context.Context, field graphql.CollectedField, obj *strava.DetailedSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _DetailedSegmentEffort_hidden(ctx context.Context, field graphql.CollectedField, obj *strava2.DetailedSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DetailedSegmentEffort_hidden(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5368,7 +5368,7 @@ func (ec *executionContext) fieldContext_DetailedSegmentEffort_hidden(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Lap_id(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+func (ec *executionContext) _Lap_id(ctx context.Context, field graphql.CollectedField, obj *strava2.Lap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Lap_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5412,7 +5412,7 @@ func (ec *executionContext) fieldContext_Lap_id(ctx context.Context, field graph
 	return fc, nil
 }
 
-func (ec *executionContext) _Lap_activity(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+func (ec *executionContext) _Lap_activity(ctx context.Context, field graphql.CollectedField, obj *strava2.Lap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Lap_activity(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5435,7 +5435,7 @@ func (ec *executionContext) _Lap_activity(ctx context.Context, field graphql.Col
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*strava.MetaActivity)
+	res := resTmp.(*strava2.MetaActivity)
 	fc.Result = res
 	return ec.marshalOMetaActivity2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐMetaActivity(ctx, field.Selections, res)
 }
@@ -5457,7 +5457,7 @@ func (ec *executionContext) fieldContext_Lap_activity(ctx context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Lap_athlete(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+func (ec *executionContext) _Lap_athlete(ctx context.Context, field graphql.CollectedField, obj *strava2.Lap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Lap_athlete(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5480,7 +5480,7 @@ func (ec *executionContext) _Lap_athlete(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*strava.MetaAthlete)
+	res := resTmp.(*strava2.MetaAthlete)
 	fc.Result = res
 	return ec.marshalOMetaAthlete2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐMetaAthlete(ctx, field.Selections, res)
 }
@@ -5502,7 +5502,7 @@ func (ec *executionContext) fieldContext_Lap_athlete(ctx context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _Lap_average_cadence(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+func (ec *executionContext) _Lap_average_cadence(ctx context.Context, field graphql.CollectedField, obj *strava2.Lap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Lap_average_cadence(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5546,7 +5546,7 @@ func (ec *executionContext) fieldContext_Lap_average_cadence(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _Lap_average_speed(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+func (ec *executionContext) _Lap_average_speed(ctx context.Context, field graphql.CollectedField, obj *strava2.Lap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Lap_average_speed(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5590,7 +5590,7 @@ func (ec *executionContext) fieldContext_Lap_average_speed(ctx context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _Lap_distance(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+func (ec *executionContext) _Lap_distance(ctx context.Context, field graphql.CollectedField, obj *strava2.Lap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Lap_distance(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5634,7 +5634,7 @@ func (ec *executionContext) fieldContext_Lap_distance(ctx context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Lap_elapsed_time(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+func (ec *executionContext) _Lap_elapsed_time(ctx context.Context, field graphql.CollectedField, obj *strava2.Lap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Lap_elapsed_time(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5678,7 +5678,7 @@ func (ec *executionContext) fieldContext_Lap_elapsed_time(ctx context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _Lap_start_index(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+func (ec *executionContext) _Lap_start_index(ctx context.Context, field graphql.CollectedField, obj *strava2.Lap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Lap_start_index(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5722,7 +5722,7 @@ func (ec *executionContext) fieldContext_Lap_start_index(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Lap_end_index(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+func (ec *executionContext) _Lap_end_index(ctx context.Context, field graphql.CollectedField, obj *strava2.Lap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Lap_end_index(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5766,7 +5766,7 @@ func (ec *executionContext) fieldContext_Lap_end_index(ctx context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _Lap_lap_index(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+func (ec *executionContext) _Lap_lap_index(ctx context.Context, field graphql.CollectedField, obj *strava2.Lap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Lap_lap_index(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5810,7 +5810,7 @@ func (ec *executionContext) fieldContext_Lap_lap_index(ctx context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _Lap_max_speed(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+func (ec *executionContext) _Lap_max_speed(ctx context.Context, field graphql.CollectedField, obj *strava2.Lap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Lap_max_speed(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5854,7 +5854,7 @@ func (ec *executionContext) fieldContext_Lap_max_speed(ctx context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _Lap_moving_time(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+func (ec *executionContext) _Lap_moving_time(ctx context.Context, field graphql.CollectedField, obj *strava2.Lap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Lap_moving_time(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5898,7 +5898,7 @@ func (ec *executionContext) fieldContext_Lap_moving_time(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Lap_name(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+func (ec *executionContext) _Lap_name(ctx context.Context, field graphql.CollectedField, obj *strava2.Lap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Lap_name(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5942,7 +5942,7 @@ func (ec *executionContext) fieldContext_Lap_name(ctx context.Context, field gra
 	return fc, nil
 }
 
-func (ec *executionContext) _Lap_pace_zone(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+func (ec *executionContext) _Lap_pace_zone(ctx context.Context, field graphql.CollectedField, obj *strava2.Lap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Lap_pace_zone(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -5986,7 +5986,7 @@ func (ec *executionContext) fieldContext_Lap_pace_zone(ctx context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _Lap_split(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+func (ec *executionContext) _Lap_split(ctx context.Context, field graphql.CollectedField, obj *strava2.Lap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Lap_split(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -6030,7 +6030,7 @@ func (ec *executionContext) fieldContext_Lap_split(ctx context.Context, field gr
 	return fc, nil
 }
 
-func (ec *executionContext) _Lap_start_date(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+func (ec *executionContext) _Lap_start_date(ctx context.Context, field graphql.CollectedField, obj *strava2.Lap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Lap_start_date(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -6074,7 +6074,7 @@ func (ec *executionContext) fieldContext_Lap_start_date(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Lap_start_date_local(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+func (ec *executionContext) _Lap_start_date_local(ctx context.Context, field graphql.CollectedField, obj *strava2.Lap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Lap_start_date_local(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -6118,7 +6118,7 @@ func (ec *executionContext) fieldContext_Lap_start_date_local(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Lap_total_elevation_gain(ctx context.Context, field graphql.CollectedField, obj *strava.Lap) (ret graphql.Marshaler) {
+func (ec *executionContext) _Lap_total_elevation_gain(ctx context.Context, field graphql.CollectedField, obj *strava2.Lap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Lap_total_elevation_gain(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -6162,7 +6162,7 @@ func (ec *executionContext) fieldContext_Lap_total_elevation_gain(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _MetaActivity_id(ctx context.Context, field graphql.CollectedField, obj *strava.MetaActivity) (ret graphql.Marshaler) {
+func (ec *executionContext) _MetaActivity_id(ctx context.Context, field graphql.CollectedField, obj *strava2.MetaActivity) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MetaActivity_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -6206,7 +6206,7 @@ func (ec *executionContext) fieldContext_MetaActivity_id(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _MetaAthlete_id(ctx context.Context, field graphql.CollectedField, obj *strava.MetaAthlete) (ret graphql.Marshaler) {
+func (ec *executionContext) _MetaAthlete_id(ctx context.Context, field graphql.CollectedField, obj *strava2.MetaAthlete) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MetaAthlete_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -6406,7 +6406,7 @@ func (ec *executionContext) fieldContext_Mutation_reloadAthleteActivities(ctx co
 	return fc, nil
 }
 
-func (ec *executionContext) _PhotosSummary_count(ctx context.Context, field graphql.CollectedField, obj *strava.PhotosSummary) (ret graphql.Marshaler) {
+func (ec *executionContext) _PhotosSummary_count(ctx context.Context, field graphql.CollectedField, obj *strava2.PhotosSummary) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PhotosSummary_count(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -6450,7 +6450,7 @@ func (ec *executionContext) fieldContext_PhotosSummary_count(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _PhotosSummary_primary(ctx context.Context, field graphql.CollectedField, obj *strava.PhotosSummary) (ret graphql.Marshaler) {
+func (ec *executionContext) _PhotosSummary_primary(ctx context.Context, field graphql.CollectedField, obj *strava2.PhotosSummary) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PhotosSummary_primary(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -6473,7 +6473,7 @@ func (ec *executionContext) _PhotosSummary_primary(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*strava.PhotosSummaryPrimary)
+	res := resTmp.(*strava2.PhotosSummaryPrimary)
 	fc.Result = res
 	return ec.marshalOPhotosSummaryPrimary2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐPhotosSummaryPrimary(ctx, field.Selections, res)
 }
@@ -6501,7 +6501,7 @@ func (ec *executionContext) fieldContext_PhotosSummary_primary(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _PhotosSummaryPrimary_id(ctx context.Context, field graphql.CollectedField, obj *strava.PhotosSummaryPrimary) (ret graphql.Marshaler) {
+func (ec *executionContext) _PhotosSummaryPrimary_id(ctx context.Context, field graphql.CollectedField, obj *strava2.PhotosSummaryPrimary) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PhotosSummaryPrimary_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -6545,7 +6545,7 @@ func (ec *executionContext) fieldContext_PhotosSummaryPrimary_id(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _PhotosSummaryPrimary_source(ctx context.Context, field graphql.CollectedField, obj *strava.PhotosSummaryPrimary) (ret graphql.Marshaler) {
+func (ec *executionContext) _PhotosSummaryPrimary_source(ctx context.Context, field graphql.CollectedField, obj *strava2.PhotosSummaryPrimary) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PhotosSummaryPrimary_source(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -6589,7 +6589,7 @@ func (ec *executionContext) fieldContext_PhotosSummaryPrimary_source(ctx context
 	return fc, nil
 }
 
-func (ec *executionContext) _PhotosSummaryPrimary_unique_id(ctx context.Context, field graphql.CollectedField, obj *strava.PhotosSummaryPrimary) (ret graphql.Marshaler) {
+func (ec *executionContext) _PhotosSummaryPrimary_unique_id(ctx context.Context, field graphql.CollectedField, obj *strava2.PhotosSummaryPrimary) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PhotosSummaryPrimary_unique_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -6633,7 +6633,7 @@ func (ec *executionContext) fieldContext_PhotosSummaryPrimary_unique_id(ctx cont
 	return fc, nil
 }
 
-func (ec *executionContext) _PhotosSummaryPrimary_urls(ctx context.Context, field graphql.CollectedField, obj *strava.PhotosSummaryPrimary) (ret graphql.Marshaler) {
+func (ec *executionContext) _PhotosSummaryPrimary_urls(ctx context.Context, field graphql.CollectedField, obj *strava2.PhotosSummaryPrimary) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PhotosSummaryPrimary_urls(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -6674,7 +6674,7 @@ func (ec *executionContext) fieldContext_PhotosSummaryPrimary_urls(ctx context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _PolylineMap_id(ctx context.Context, field graphql.CollectedField, obj *strava.PolylineMap) (ret graphql.Marshaler) {
+func (ec *executionContext) _PolylineMap_id(ctx context.Context, field graphql.CollectedField, obj *strava2.PolylineMap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PolylineMap_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -6718,7 +6718,7 @@ func (ec *executionContext) fieldContext_PolylineMap_id(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _PolylineMap_polyline(ctx context.Context, field graphql.CollectedField, obj *strava.PolylineMap) (ret graphql.Marshaler) {
+func (ec *executionContext) _PolylineMap_polyline(ctx context.Context, field graphql.CollectedField, obj *strava2.PolylineMap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PolylineMap_polyline(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -6762,7 +6762,7 @@ func (ec *executionContext) fieldContext_PolylineMap_polyline(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _PolylineMap_summary_polyline(ctx context.Context, field graphql.CollectedField, obj *strava.PolylineMap) (ret graphql.Marshaler) {
+func (ec *executionContext) _PolylineMap_summary_polyline(ctx context.Context, field graphql.CollectedField, obj *strava2.PolylineMap) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PolylineMap_summary_polyline(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -6829,7 +6829,7 @@ func (ec *executionContext) _Query_activity(ctx context.Context, field graphql.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*strava.DetailedActivity)
+	res := resTmp.(*strava2.DetailedActivity)
 	fc.Result = res
 	return ec.marshalODetailedActivity2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivity(ctx, field.Selections, res)
 }
@@ -6985,7 +6985,7 @@ func (ec *executionContext) _Query_activities(ctx context.Context, field graphql
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*strava.DetailedActivity)
+	res := resTmp.([]*strava2.DetailedActivity)
 	fc.Result = res
 	return ec.marshalODetailedActivity2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivityᚄ(ctx, field.Selections, res)
 }
@@ -7308,7 +7308,7 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Split_average_speed(ctx context.Context, field graphql.CollectedField, obj *strava.Split) (ret graphql.Marshaler) {
+func (ec *executionContext) _Split_average_speed(ctx context.Context, field graphql.CollectedField, obj *strava2.Split) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Split_average_speed(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -7352,7 +7352,7 @@ func (ec *executionContext) fieldContext_Split_average_speed(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _Split_distance(ctx context.Context, field graphql.CollectedField, obj *strava.Split) (ret graphql.Marshaler) {
+func (ec *executionContext) _Split_distance(ctx context.Context, field graphql.CollectedField, obj *strava2.Split) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Split_distance(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -7396,7 +7396,7 @@ func (ec *executionContext) fieldContext_Split_distance(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Split_elapsed_time(ctx context.Context, field graphql.CollectedField, obj *strava.Split) (ret graphql.Marshaler) {
+func (ec *executionContext) _Split_elapsed_time(ctx context.Context, field graphql.CollectedField, obj *strava2.Split) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Split_elapsed_time(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -7440,7 +7440,7 @@ func (ec *executionContext) fieldContext_Split_elapsed_time(ctx context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _Split_elevation_difference(ctx context.Context, field graphql.CollectedField, obj *strava.Split) (ret graphql.Marshaler) {
+func (ec *executionContext) _Split_elevation_difference(ctx context.Context, field graphql.CollectedField, obj *strava2.Split) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Split_elevation_difference(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -7484,7 +7484,7 @@ func (ec *executionContext) fieldContext_Split_elevation_difference(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _Split_pace_zone(ctx context.Context, field graphql.CollectedField, obj *strava.Split) (ret graphql.Marshaler) {
+func (ec *executionContext) _Split_pace_zone(ctx context.Context, field graphql.CollectedField, obj *strava2.Split) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Split_pace_zone(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -7528,7 +7528,7 @@ func (ec *executionContext) fieldContext_Split_pace_zone(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Split_moving_time(ctx context.Context, field graphql.CollectedField, obj *strava.Split) (ret graphql.Marshaler) {
+func (ec *executionContext) _Split_moving_time(ctx context.Context, field graphql.CollectedField, obj *strava2.Split) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Split_moving_time(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -7572,7 +7572,7 @@ func (ec *executionContext) fieldContext_Split_moving_time(ctx context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _Split_split(ctx context.Context, field graphql.CollectedField, obj *strava.Split) (ret graphql.Marshaler) {
+func (ec *executionContext) _Split_split(ctx context.Context, field graphql.CollectedField, obj *strava2.Split) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Split_split(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -7643,7 +7643,7 @@ func (ec *executionContext) _Subscription_activities(ctx context.Context, field 
 		return nil
 	}
 	return func(ctx context.Context) graphql.Marshaler {
-		res, ok := <-resTmp.(<-chan []*strava.DetailedActivity)
+		res, ok := <-resTmp.(<-chan []*strava2.DetailedActivity)
 		if !ok {
 			return nil
 		}
@@ -7774,7 +7774,7 @@ func (ec *executionContext) fieldContext_Subscription_activities(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _SummaryGear_id(ctx context.Context, field graphql.CollectedField, obj *strava.SummaryGear) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummaryGear_id(ctx context.Context, field graphql.CollectedField, obj *strava2.SummaryGear) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummaryGear_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -7818,7 +7818,7 @@ func (ec *executionContext) fieldContext_SummaryGear_id(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _SummaryGear_resource_state(ctx context.Context, field graphql.CollectedField, obj *strava.SummaryGear) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummaryGear_resource_state(ctx context.Context, field graphql.CollectedField, obj *strava2.SummaryGear) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummaryGear_resource_state(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -7862,7 +7862,7 @@ func (ec *executionContext) fieldContext_SummaryGear_resource_state(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _SummaryGear_primary(ctx context.Context, field graphql.CollectedField, obj *strava.SummaryGear) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummaryGear_primary(ctx context.Context, field graphql.CollectedField, obj *strava2.SummaryGear) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummaryGear_primary(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -7906,7 +7906,7 @@ func (ec *executionContext) fieldContext_SummaryGear_primary(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _SummaryGear_name(ctx context.Context, field graphql.CollectedField, obj *strava.SummaryGear) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummaryGear_name(ctx context.Context, field graphql.CollectedField, obj *strava2.SummaryGear) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummaryGear_name(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -7950,7 +7950,7 @@ func (ec *executionContext) fieldContext_SummaryGear_name(ctx context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _SummaryGear_distance(ctx context.Context, field graphql.CollectedField, obj *strava.SummaryGear) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummaryGear_distance(ctx context.Context, field graphql.CollectedField, obj *strava2.SummaryGear) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummaryGear_distance(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -7994,7 +7994,7 @@ func (ec *executionContext) fieldContext_SummaryGear_distance(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _SummaryPrSegmentEffort_pr_activity_id(ctx context.Context, field graphql.CollectedField, obj *strava.SummaryPrSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummaryPrSegmentEffort_pr_activity_id(ctx context.Context, field graphql.CollectedField, obj *strava2.SummaryPrSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummaryPrSegmentEffort_pr_activity_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8038,7 +8038,7 @@ func (ec *executionContext) fieldContext_SummaryPrSegmentEffort_pr_activity_id(c
 	return fc, nil
 }
 
-func (ec *executionContext) _SummaryPrSegmentEffort_pr_elapsed_time(ctx context.Context, field graphql.CollectedField, obj *strava.SummaryPrSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummaryPrSegmentEffort_pr_elapsed_time(ctx context.Context, field graphql.CollectedField, obj *strava2.SummaryPrSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummaryPrSegmentEffort_pr_elapsed_time(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8082,7 +8082,7 @@ func (ec *executionContext) fieldContext_SummaryPrSegmentEffort_pr_elapsed_time(
 	return fc, nil
 }
 
-func (ec *executionContext) _SummaryPrSegmentEffort_pr_date(ctx context.Context, field graphql.CollectedField, obj *strava.SummaryPrSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummaryPrSegmentEffort_pr_date(ctx context.Context, field graphql.CollectedField, obj *strava2.SummaryPrSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummaryPrSegmentEffort_pr_date(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8126,7 +8126,7 @@ func (ec *executionContext) fieldContext_SummaryPrSegmentEffort_pr_date(ctx cont
 	return fc, nil
 }
 
-func (ec *executionContext) _SummaryPrSegmentEffort_effort_count(ctx context.Context, field graphql.CollectedField, obj *strava.SummaryPrSegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummaryPrSegmentEffort_effort_count(ctx context.Context, field graphql.CollectedField, obj *strava2.SummaryPrSegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummaryPrSegmentEffort_effort_count(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8170,7 +8170,7 @@ func (ec *executionContext) fieldContext_SummaryPrSegmentEffort_effort_count(ctx
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegment_id(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegment_id(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegment_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8214,7 +8214,7 @@ func (ec *executionContext) fieldContext_SummarySegment_id(ctx context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegment_name(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegment_name(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegment_name(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8258,7 +8258,7 @@ func (ec *executionContext) fieldContext_SummarySegment_name(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegment_activity_type(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegment_activity_type(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegment_activity_type(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8302,7 +8302,7 @@ func (ec *executionContext) fieldContext_SummarySegment_activity_type(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegment_distance(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegment_distance(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegment_distance(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8346,7 +8346,7 @@ func (ec *executionContext) fieldContext_SummarySegment_distance(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegment_average_grade(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegment_average_grade(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegment_average_grade(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8390,7 +8390,7 @@ func (ec *executionContext) fieldContext_SummarySegment_average_grade(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegment_maximum_grade(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegment_maximum_grade(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegment_maximum_grade(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8434,7 +8434,7 @@ func (ec *executionContext) fieldContext_SummarySegment_maximum_grade(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegment_elevation_high(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegment_elevation_high(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegment_elevation_high(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8478,7 +8478,7 @@ func (ec *executionContext) fieldContext_SummarySegment_elevation_high(ctx conte
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegment_elevation_low(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegment_elevation_low(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegment_elevation_low(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8522,7 +8522,7 @@ func (ec *executionContext) fieldContext_SummarySegment_elevation_low(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegment_start_latlng(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegment_start_latlng(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegment_start_latlng(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8563,7 +8563,7 @@ func (ec *executionContext) fieldContext_SummarySegment_start_latlng(ctx context
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegment_end_latlng(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegment_end_latlng(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegment_end_latlng(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8604,7 +8604,7 @@ func (ec *executionContext) fieldContext_SummarySegment_end_latlng(ctx context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegment_climb_category(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegment_climb_category(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegment_climb_category(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8648,7 +8648,7 @@ func (ec *executionContext) fieldContext_SummarySegment_climb_category(ctx conte
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegment_city(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegment_city(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegment_city(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8692,7 +8692,7 @@ func (ec *executionContext) fieldContext_SummarySegment_city(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegment_state(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegment_state(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegment_state(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8736,7 +8736,7 @@ func (ec *executionContext) fieldContext_SummarySegment_state(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegment_country(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegment_country(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegment_country(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8780,7 +8780,7 @@ func (ec *executionContext) fieldContext_SummarySegment_country(ctx context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegment_private(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegment_private(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegment_private(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8824,7 +8824,7 @@ func (ec *executionContext) fieldContext_SummarySegment_private(ctx context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegment_athlete_pr_effort(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegment_athlete_pr_effort(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegment_athlete_pr_effort(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8847,7 +8847,7 @@ func (ec *executionContext) _SummarySegment_athlete_pr_effort(ctx context.Contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*strava.SummarySegmentEffort)
+	res := resTmp.(*strava2.SummarySegmentEffort)
 	fc.Result = res
 	return ec.marshalOSummarySegmentEffort2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSummarySegmentEffort(ctx, field.Selections, res)
 }
@@ -8881,7 +8881,7 @@ func (ec *executionContext) fieldContext_SummarySegment_athlete_pr_effort(ctx co
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegment_athlete_segment_stats(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegment) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegment_athlete_segment_stats(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegment_athlete_segment_stats(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8904,7 +8904,7 @@ func (ec *executionContext) _SummarySegment_athlete_segment_stats(ctx context.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*strava.SummaryPrSegmentEffort)
+	res := resTmp.(*strava2.SummaryPrSegmentEffort)
 	fc.Result = res
 	return ec.marshalOSummaryPrSegmentEffort2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSummaryPrSegmentEffort(ctx, field.Selections, res)
 }
@@ -8932,7 +8932,7 @@ func (ec *executionContext) fieldContext_SummarySegment_athlete_segment_stats(ct
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegmentEffort_id(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegmentEffort_id(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegmentEffort_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8976,7 +8976,7 @@ func (ec *executionContext) fieldContext_SummarySegmentEffort_id(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegmentEffort_activity_id(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegmentEffort_activity_id(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegmentEffort_activity_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -9020,7 +9020,7 @@ func (ec *executionContext) fieldContext_SummarySegmentEffort_activity_id(ctx co
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegmentEffort_elapsed_time(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegmentEffort_elapsed_time(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegmentEffort_elapsed_time(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -9064,7 +9064,7 @@ func (ec *executionContext) fieldContext_SummarySegmentEffort_elapsed_time(ctx c
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegmentEffort_start_date(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegmentEffort_start_date(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegmentEffort_start_date(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -9108,7 +9108,7 @@ func (ec *executionContext) fieldContext_SummarySegmentEffort_start_date(ctx con
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegmentEffort_start_date_local(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegmentEffort_start_date_local(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegmentEffort_start_date_local(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -9152,7 +9152,7 @@ func (ec *executionContext) fieldContext_SummarySegmentEffort_start_date_local(c
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegmentEffort_distance(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegmentEffort_distance(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegmentEffort_distance(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -9196,7 +9196,7 @@ func (ec *executionContext) fieldContext_SummarySegmentEffort_distance(ctx conte
 	return fc, nil
 }
 
-func (ec *executionContext) _SummarySegmentEffort_is_kom(ctx context.Context, field graphql.CollectedField, obj *strava.SummarySegmentEffort) (ret graphql.Marshaler) {
+func (ec *executionContext) _SummarySegmentEffort_is_kom(ctx context.Context, field graphql.CollectedField, obj *strava2.SummarySegmentEffort) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SummarySegmentEffort_is_kom(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -11089,7 +11089,7 @@ func (ec *executionContext) _AthleteToken(ctx context.Context, sel ast.Selection
 
 var detailedActivityImplementors = []string{"DetailedActivity"}
 
-func (ec *executionContext) _DetailedActivity(ctx context.Context, sel ast.SelectionSet, obj *strava.DetailedActivity) graphql.Marshaler {
+func (ec *executionContext) _DetailedActivity(ctx context.Context, sel ast.SelectionSet, obj *strava2.DetailedActivity) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, detailedActivityImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -11437,7 +11437,7 @@ func (ec *executionContext) _DetailedActivity(ctx context.Context, sel ast.Selec
 
 var detailedSegmentEffortImplementors = []string{"DetailedSegmentEffort"}
 
-func (ec *executionContext) _DetailedSegmentEffort(ctx context.Context, sel ast.SelectionSet, obj *strava.DetailedSegmentEffort) graphql.Marshaler {
+func (ec *executionContext) _DetailedSegmentEffort(ctx context.Context, sel ast.SelectionSet, obj *strava2.DetailedSegmentEffort) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, detailedSegmentEffortImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -11603,7 +11603,7 @@ func (ec *executionContext) _DetailedSegmentEffort(ctx context.Context, sel ast.
 
 var lapImplementors = []string{"Lap"}
 
-func (ec *executionContext) _Lap(ctx context.Context, sel ast.SelectionSet, obj *strava.Lap) graphql.Marshaler {
+func (ec *executionContext) _Lap(ctx context.Context, sel ast.SelectionSet, obj *strava2.Lap) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, lapImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -11744,7 +11744,7 @@ func (ec *executionContext) _Lap(ctx context.Context, sel ast.SelectionSet, obj 
 
 var metaActivityImplementors = []string{"MetaActivity"}
 
-func (ec *executionContext) _MetaActivity(ctx context.Context, sel ast.SelectionSet, obj *strava.MetaActivity) graphql.Marshaler {
+func (ec *executionContext) _MetaActivity(ctx context.Context, sel ast.SelectionSet, obj *strava2.MetaActivity) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, metaActivityImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -11772,7 +11772,7 @@ func (ec *executionContext) _MetaActivity(ctx context.Context, sel ast.Selection
 
 var metaAthleteImplementors = []string{"MetaAthlete"}
 
-func (ec *executionContext) _MetaAthlete(ctx context.Context, sel ast.SelectionSet, obj *strava.MetaAthlete) graphql.Marshaler {
+func (ec *executionContext) _MetaAthlete(ctx context.Context, sel ast.SelectionSet, obj *strava2.MetaAthlete) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, metaAthleteImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -11848,7 +11848,7 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 
 var photosSummaryImplementors = []string{"PhotosSummary"}
 
-func (ec *executionContext) _PhotosSummary(ctx context.Context, sel ast.SelectionSet, obj *strava.PhotosSummary) graphql.Marshaler {
+func (ec *executionContext) _PhotosSummary(ctx context.Context, sel ast.SelectionSet, obj *strava2.PhotosSummary) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, photosSummaryImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -11880,7 +11880,7 @@ func (ec *executionContext) _PhotosSummary(ctx context.Context, sel ast.Selectio
 
 var photosSummaryPrimaryImplementors = []string{"PhotosSummaryPrimary"}
 
-func (ec *executionContext) _PhotosSummaryPrimary(ctx context.Context, sel ast.SelectionSet, obj *strava.PhotosSummaryPrimary) graphql.Marshaler {
+func (ec *executionContext) _PhotosSummaryPrimary(ctx context.Context, sel ast.SelectionSet, obj *strava2.PhotosSummaryPrimary) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, photosSummaryPrimaryImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -11926,7 +11926,7 @@ func (ec *executionContext) _PhotosSummaryPrimary(ctx context.Context, sel ast.S
 
 var polylineMapImplementors = []string{"PolylineMap"}
 
-func (ec *executionContext) _PolylineMap(ctx context.Context, sel ast.SelectionSet, obj *strava.PolylineMap) graphql.Marshaler {
+func (ec *executionContext) _PolylineMap(ctx context.Context, sel ast.SelectionSet, obj *strava2.PolylineMap) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, polylineMapImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -12073,7 +12073,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 
 var splitImplementors = []string{"Split"}
 
-func (ec *executionContext) _Split(ctx context.Context, sel ast.SelectionSet, obj *strava.Split) graphql.Marshaler {
+func (ec *executionContext) _Split(ctx context.Context, sel ast.SelectionSet, obj *strava2.Split) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, splitImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -12163,7 +12163,7 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 
 var summaryGearImplementors = []string{"SummaryGear"}
 
-func (ec *executionContext) _SummaryGear(ctx context.Context, sel ast.SelectionSet, obj *strava.SummaryGear) graphql.Marshaler {
+func (ec *executionContext) _SummaryGear(ctx context.Context, sel ast.SelectionSet, obj *strava2.SummaryGear) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, summaryGearImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -12219,7 +12219,7 @@ func (ec *executionContext) _SummaryGear(ctx context.Context, sel ast.SelectionS
 
 var summaryPrSegmentEffortImplementors = []string{"SummaryPrSegmentEffort"}
 
-func (ec *executionContext) _SummaryPrSegmentEffort(ctx context.Context, sel ast.SelectionSet, obj *strava.SummaryPrSegmentEffort) graphql.Marshaler {
+func (ec *executionContext) _SummaryPrSegmentEffort(ctx context.Context, sel ast.SelectionSet, obj *strava2.SummaryPrSegmentEffort) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, summaryPrSegmentEffortImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -12268,7 +12268,7 @@ func (ec *executionContext) _SummaryPrSegmentEffort(ctx context.Context, sel ast
 
 var summarySegmentImplementors = []string{"SummarySegment"}
 
-func (ec *executionContext) _SummarySegment(ctx context.Context, sel ast.SelectionSet, obj *strava.SummarySegment) graphql.Marshaler {
+func (ec *executionContext) _SummarySegment(ctx context.Context, sel ast.SelectionSet, obj *strava2.SummarySegment) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, summarySegmentImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -12396,7 +12396,7 @@ func (ec *executionContext) _SummarySegment(ctx context.Context, sel ast.Selecti
 
 var summarySegmentEffortImplementors = []string{"SummarySegmentEffort"}
 
-func (ec *executionContext) _SummarySegmentEffort(ctx context.Context, sel ast.SelectionSet, obj *strava.SummarySegmentEffort) graphql.Marshaler {
+func (ec *executionContext) _SummarySegmentEffort(ctx context.Context, sel ast.SelectionSet, obj *strava2.SummarySegmentEffort) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, summarySegmentEffortImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -12851,7 +12851,7 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNDetailedActivity2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivityᚄ(ctx context.Context, sel ast.SelectionSet, v []*strava.DetailedActivity) graphql.Marshaler {
+func (ec *executionContext) marshalNDetailedActivity2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivityᚄ(ctx context.Context, sel ast.SelectionSet, v []*strava2.DetailedActivity) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -12895,7 +12895,7 @@ func (ec *executionContext) marshalNDetailedActivity2ᚕᚖsealwayᚑstravaᚋgr
 	return ret
 }
 
-func (ec *executionContext) marshalNDetailedActivity2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivity(ctx context.Context, sel ast.SelectionSet, v *strava.DetailedActivity) graphql.Marshaler {
+func (ec *executionContext) marshalNDetailedActivity2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivity(ctx context.Context, sel ast.SelectionSet, v *strava2.DetailedActivity) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -13329,7 +13329,7 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
-func (ec *executionContext) marshalODetailedActivity2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivityᚄ(ctx context.Context, sel ast.SelectionSet, v []*strava.DetailedActivity) graphql.Marshaler {
+func (ec *executionContext) marshalODetailedActivity2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivityᚄ(ctx context.Context, sel ast.SelectionSet, v []*strava2.DetailedActivity) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -13376,14 +13376,14 @@ func (ec *executionContext) marshalODetailedActivity2ᚕᚖsealwayᚑstravaᚋgr
 	return ret
 }
 
-func (ec *executionContext) marshalODetailedActivity2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivity(ctx context.Context, sel ast.SelectionSet, v *strava.DetailedActivity) graphql.Marshaler {
+func (ec *executionContext) marshalODetailedActivity2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedActivity(ctx context.Context, sel ast.SelectionSet, v *strava2.DetailedActivity) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._DetailedActivity(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalODetailedSegmentEffort2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffort(ctx context.Context, sel ast.SelectionSet, v []*strava.DetailedSegmentEffort) graphql.Marshaler {
+func (ec *executionContext) marshalODetailedSegmentEffort2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffort(ctx context.Context, sel ast.SelectionSet, v []*strava2.DetailedSegmentEffort) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -13424,7 +13424,7 @@ func (ec *executionContext) marshalODetailedSegmentEffort2ᚕᚖsealwayᚑstrava
 	return ret
 }
 
-func (ec *executionContext) marshalODetailedSegmentEffort2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffort(ctx context.Context, sel ast.SelectionSet, v *strava.DetailedSegmentEffort) graphql.Marshaler {
+func (ec *executionContext) marshalODetailedSegmentEffort2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐDetailedSegmentEffort(ctx context.Context, sel ast.SelectionSet, v *strava2.DetailedSegmentEffort) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -13523,7 +13523,7 @@ func (ec *executionContext) marshalOInt2ᚖint64(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalOLap2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐLap(ctx context.Context, sel ast.SelectionSet, v []*strava.Lap) graphql.Marshaler {
+func (ec *executionContext) marshalOLap2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐLap(ctx context.Context, sel ast.SelectionSet, v []*strava2.Lap) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -13564,49 +13564,49 @@ func (ec *executionContext) marshalOLap2ᚕᚖsealwayᚑstravaᚋgraphᚋmodel�
 	return ret
 }
 
-func (ec *executionContext) marshalOLap2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐLap(ctx context.Context, sel ast.SelectionSet, v *strava.Lap) graphql.Marshaler {
+func (ec *executionContext) marshalOLap2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐLap(ctx context.Context, sel ast.SelectionSet, v *strava2.Lap) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Lap(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOMetaActivity2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐMetaActivity(ctx context.Context, sel ast.SelectionSet, v *strava.MetaActivity) graphql.Marshaler {
+func (ec *executionContext) marshalOMetaActivity2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐMetaActivity(ctx context.Context, sel ast.SelectionSet, v *strava2.MetaActivity) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._MetaActivity(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOMetaAthlete2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐMetaAthlete(ctx context.Context, sel ast.SelectionSet, v *strava.MetaAthlete) graphql.Marshaler {
+func (ec *executionContext) marshalOMetaAthlete2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐMetaAthlete(ctx context.Context, sel ast.SelectionSet, v *strava2.MetaAthlete) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._MetaAthlete(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOPhotosSummary2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐPhotosSummary(ctx context.Context, sel ast.SelectionSet, v *strava.PhotosSummary) graphql.Marshaler {
+func (ec *executionContext) marshalOPhotosSummary2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐPhotosSummary(ctx context.Context, sel ast.SelectionSet, v *strava2.PhotosSummary) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._PhotosSummary(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOPhotosSummaryPrimary2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐPhotosSummaryPrimary(ctx context.Context, sel ast.SelectionSet, v *strava.PhotosSummaryPrimary) graphql.Marshaler {
+func (ec *executionContext) marshalOPhotosSummaryPrimary2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐPhotosSummaryPrimary(ctx context.Context, sel ast.SelectionSet, v *strava2.PhotosSummaryPrimary) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._PhotosSummaryPrimary(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOPolylineMap2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐPolylineMap(ctx context.Context, sel ast.SelectionSet, v *strava.PolylineMap) graphql.Marshaler {
+func (ec *executionContext) marshalOPolylineMap2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐPolylineMap(ctx context.Context, sel ast.SelectionSet, v *strava2.PolylineMap) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._PolylineMap(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOSplit2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplit(ctx context.Context, sel ast.SelectionSet, v []*strava.Split) graphql.Marshaler {
+func (ec *executionContext) marshalOSplit2ᚕᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplit(ctx context.Context, sel ast.SelectionSet, v []*strava2.Split) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -13647,7 +13647,7 @@ func (ec *executionContext) marshalOSplit2ᚕᚖsealwayᚑstravaᚋgraphᚋmodel
 	return ret
 }
 
-func (ec *executionContext) marshalOSplit2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplit(ctx context.Context, sel ast.SelectionSet, v *strava.Split) graphql.Marshaler {
+func (ec *executionContext) marshalOSplit2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSplit(ctx context.Context, sel ast.SelectionSet, v *strava2.Split) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -13708,28 +13708,28 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	return res
 }
 
-func (ec *executionContext) marshalOSummaryGear2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSummaryGear(ctx context.Context, sel ast.SelectionSet, v *strava.SummaryGear) graphql.Marshaler {
+func (ec *executionContext) marshalOSummaryGear2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSummaryGear(ctx context.Context, sel ast.SelectionSet, v *strava2.SummaryGear) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._SummaryGear(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOSummaryPrSegmentEffort2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSummaryPrSegmentEffort(ctx context.Context, sel ast.SelectionSet, v *strava.SummaryPrSegmentEffort) graphql.Marshaler {
+func (ec *executionContext) marshalOSummaryPrSegmentEffort2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSummaryPrSegmentEffort(ctx context.Context, sel ast.SelectionSet, v *strava2.SummaryPrSegmentEffort) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._SummaryPrSegmentEffort(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOSummarySegment2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSummarySegment(ctx context.Context, sel ast.SelectionSet, v *strava.SummarySegment) graphql.Marshaler {
+func (ec *executionContext) marshalOSummarySegment2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSummarySegment(ctx context.Context, sel ast.SelectionSet, v *strava2.SummarySegment) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._SummarySegment(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOSummarySegmentEffort2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSummarySegmentEffort(ctx context.Context, sel ast.SelectionSet, v *strava.SummarySegmentEffort) graphql.Marshaler {
+func (ec *executionContext) marshalOSummarySegmentEffort2ᚖsealwayᚑstravaᚋgraphᚋmodelᚐSummarySegmentEffort(ctx context.Context, sel ast.SelectionSet, v *strava2.SummarySegmentEffort) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

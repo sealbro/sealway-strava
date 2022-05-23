@@ -8,6 +8,8 @@ sealway strava integration
   - `SEALWAY_Services__Strava__Client`
   - `SEALWAY_Services__Strava__Secret`
 - localhost mongo `docker run -d --restart=always --name mongodb -p 27017:27017 mongo`
+- [graphql queries docs](https://graphql.org/learn/queries/)
+- [timestamp converter](https://www.epochconverter.com/)
 
 ## Generate strava client
 

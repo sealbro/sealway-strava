@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"sealway-strava/api/model"
 	"sealway-strava/infra"
@@ -46,7 +45,7 @@ func InitStravaRepository(connectionString string, ctx context.Context) (error, 
 
 func (repository *StravaRepository) AddIndex(dbName string, collection string, indexKeys interface{}, opt *options.IndexOptions) error {
 	serviceCollection := repository.Client.Database(dbName).Collection(collection)
-	indexName, err := serviceCollection.Indexes().CreateOne(mtest.Background, mongo.IndexModel{
+	indexName, err := serviceCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
 		Keys:    indexKeys,
 		Options: opt,
 	})
@@ -139,6 +138,10 @@ func (repository *StravaRepository) GetActivity(innerCtx context.Context, activi
 }
 
 func (repository *StravaRepository) GetActivities(innerCtx context.Context, athleteIds []int64, limit int64) ([]*strava.DetailedActivity, error) {
+	if len(athleteIds) == 0 {
+		return nil, fmt.Errorf("StravaRepository - GetActivities - 'athleteIds' is empty")
+	}
+
 	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaActivityCollectionName)
 	ctx, cancel := createTimeoutFromInnerContext(innerCtx)
 	defer cancel()

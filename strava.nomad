@@ -1,5 +1,5 @@
 job "sealway-strava" {
-  datacenters = ["home"]
+  datacenters = ["lan"]
 
   type = "service"
 
@@ -11,26 +11,20 @@ job "sealway-strava" {
 
   constraint {
     attribute = "${attr.cpu.arch}"
-    value     = "arm64"
+    value     = "amd64"
   }
 
   update {
     max_parallel = 1
-
     health_check = "checks"
-
     min_healthy_time = "30s"
-
     healthy_deadline = "5m"
   }
 
   migrate {
     max_parallel = 1
-
     health_check = "checks"
-
     min_healthy_time = "2m"
-
     healthy_deadline = "5m"
   }
 
@@ -38,23 +32,20 @@ job "sealway-strava" {
     count = 1
 
     network {
-      port "app" {
+      port "app-http" {
         to = 8080
-      }
-
-      dns {
-        servers = ["172.17.0.1", "192.168.1.1"]
+        host_network = "private"
       }
     }
 
     service {
       name = "integration-strava"
       tags = ["wss", "http", "sealway", "api", "private", "internal"]
-      port = "app"
+      port = "app-http"
 
       check {
         type     = "http"
-        port     = "app"
+        port     = "app-http"
         interval = "30s"
         timeout  = "5s"
         path     = "/healthz"
@@ -70,9 +61,7 @@ job "sealway-strava" {
     restart {
       attempts = 20
       interval = "30m"
-
       delay = "1m"
-
       mode = "fail"
     }
 
@@ -83,10 +72,14 @@ job "sealway-strava" {
         image = "sealway/strava"
         force_pull = true
 
-        ports = ["app"]
+        ports = ["app-http"]
 
         labels {
           from_nomad = "yes"
+        }
+
+        logging {
+          type = "loki"
         }
       }
 
@@ -94,7 +87,7 @@ job "sealway-strava" {
         data = <<EOH
 SEALWAY_Services__Strava__Client={{with secret "applications/prod/default/Services/Strava"}}{{.Data.data.client_id}}{{end}}
 SEALWAY_Services__Strava__Secret={{with secret "applications/prod/default/Services/Strava"}}{{.Data.data.client_secret}}{{end}}
-SEALWAY_ConnectionStrings__Mongo__Connection={{ key "applications/prod/default/ConnectionStrings/Mongo" }}
+SEALWAY_ConnectionStrings__Mongo__Connection=mongodb://mongo.service.consul
 EOH
 
         destination = "secrets/file.env"

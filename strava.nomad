@@ -16,21 +16,15 @@ job "sealway-strava" {
 
   update {
     max_parallel = 1
-
     health_check = "checks"
-
     min_healthy_time = "30s"
-
     healthy_deadline = "5m"
   }
 
   migrate {
     max_parallel = 1
-
     health_check = "checks"
-
     min_healthy_time = "2m"
-
     healthy_deadline = "5m"
   }
 
@@ -67,9 +61,7 @@ job "sealway-strava" {
     restart {
       attempts = 20
       interval = "30m"
-
       delay = "1m"
-
       mode = "fail"
     }
 
@@ -84,6 +76,10 @@ job "sealway-strava" {
 
         labels {
           from_nomad = "yes"
+        }
+
+        logging {
+          type = "loki"
         }
       }
 

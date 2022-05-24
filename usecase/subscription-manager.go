@@ -26,17 +26,12 @@ type SubscriptionManager struct {
 
 func MakeSubscriptionManager(config *BatchConfig) *SubscriptionManager {
 	manager := &SubscriptionManager{
-		BatchConfig: config,
+		BatchConfig:   config,
+		subscribers:   map[string]chan []*strava.DetailedActivity{},
+		inputActivity: make(chan *strava.DetailedActivity),
+		closed:        false,
 	}
 
-	manager.initialize()
-
-	return manager
-}
-
-func (manager *SubscriptionManager) initialize() {
-	manager.subscribers = map[string]chan []*strava.DetailedActivity{}
-	manager.inputActivity = make(chan *strava.DetailedActivity)
 	manager.outputActivities = batching.Process(manager.inputActivity, manager.ActivityBatchSize, manager.ActivityBatchTime)
 
 	go func() {
@@ -52,11 +47,12 @@ func (manager *SubscriptionManager) initialize() {
 			}
 		}
 	}()
+
+	return manager
 }
 
 func (manager *SubscriptionManager) Notify(activities ...*strava.DetailedActivity) {
 	if manager.closed {
-		logger.Fatal("inputActivity was closed")
 		return
 	}
 
@@ -65,20 +61,24 @@ func (manager *SubscriptionManager) Notify(activities ...*strava.DetailedActivit
 	}
 }
 
-func (manager *SubscriptionManager) AddSubscriber(ctx context.Context) chan []*strava.DetailedActivity {
+func (manager *SubscriptionManager) AddSubscriber(ctx context.Context) (chan []*strava.DetailedActivity, error) {
+	if manager.closed {
+		return nil, fmt.Errorf("SubscriptionManager closed the connection")
+	}
+
 	key := uuid.New().String()
 	ch := make(chan []*strava.DetailedActivity)
 	manager.subscribers[key] = ch
 
-	logger.Infof("Added new subscriber %s", key)
+	logger.Infof("SubscriptionManager - Added new subscriber %s", key)
 
 	go func() {
 		<-ctx.Done()
 		manager.RemoveSubscriber(key)
-		logger.Infof("Removed subscriber %s", key)
+		logger.Infof("SubscriptionManager - Removed subscriber %s", key)
 	}()
 
-	return ch
+	return ch, nil
 }
 
 func (manager *SubscriptionManager) RemoveSubscriber(key string) {
@@ -89,6 +89,11 @@ func (manager *SubscriptionManager) RemoveSubscriber(key string) {
 
 func (manager *SubscriptionManager) Close() {
 	manager.closed = true
+
+	for key, subscriber := range manager.subscribers {
+		close(subscriber)
+		delete(manager.subscribers, key)
+	}
 
 	close(manager.inputActivity)
 }

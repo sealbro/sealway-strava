@@ -42,6 +42,7 @@ func (r *mutationResolver) ResendSavedActivities(ctx context.Context, athleteIds
 
 func (r *mutationResolver) ReloadAthleteActivities(ctx context.Context, athleteIds []int64, before *int64, after *int64, page *int64, limit int64) (*string, error) {
 	var errResult error
+
 	for _, athleteId := range athleteIds {
 		activities, err := r.StravaService.GetActivitiesByAthleteId(ctx, athleteId, before, after, page, limit)
 		if err != nil {
@@ -82,7 +83,7 @@ func (r *queryResolver) Token(ctx context.Context, athleteID int64) ([]*model.At
 }
 
 func (r *subscriptionResolver) Activities(ctx context.Context) (<-chan []*strava.DetailedActivity, error) {
-	return r.SubscriptionManager.AddSubscriber(ctx), nil
+	return r.SubscriptionManager.AddSubscriber(ctx)
 }
 
 // Mutation returns generated.MutationResolver implementation.

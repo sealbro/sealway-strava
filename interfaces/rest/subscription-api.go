@@ -30,10 +30,10 @@ func MakeSubscriptionApi(queue *domain.ActivitiesQueue, api *DefaultApi, client 
 }
 
 func (api *SubscriptionApi) RegisterApiRoutes() {
-	var serverName = "api"
-	api.Router.HandleFunc(api.Prefix(serverName, "/quota"), api.quota).Methods("GET")
-	api.Router.HandleFunc(api.Prefix(serverName, "/subscription"), api.verify).Methods("GET")
-	api.Router.HandleFunc(api.Prefix(serverName, "/subscription"), api.subscription).Methods("POST")
+	urlPrefix := "api"
+	api.Router.HandleFunc(api.Prefix(urlPrefix, "/quota"), api.quota).Methods("GET")
+	api.Router.HandleFunc(api.Prefix(urlPrefix, "/subscription"), api.verify).Methods("GET")
+	api.Router.HandleFunc(api.Prefix(urlPrefix, "/subscription"), api.subscription).Methods("POST")
 }
 
 func (api *SubscriptionApi) quota(w http.ResponseWriter, r *http.Request) {

@@ -40,7 +40,7 @@ func MakeGraphqlApi(api *rest.DefaultApi, queue *domain.ActivitiesQueue, reposit
 }
 
 func (server *GraphqlApi) RegisterGraphQl() *handler.Server {
-	serverName := "graphql"
+	urlPrefix := "graphql"
 
 	schema := generated.NewExecutableSchema(generated.Config{Resolvers: server.Resolvers})
 	srv := handler.NewDefaultServer(schema)
@@ -56,8 +56,8 @@ func (server *GraphqlApi) RegisterGraphQl() *handler.Server {
 	})
 	srv.Use(extension.Introspection{})
 
-	endpoint := server.Prefix(serverName, "/query")
-	server.Router.Handle(server.Prefix(serverName, "/"), PlaygroundHandler("GraphQL playground", endpoint))
+	endpoint := server.Prefix(urlPrefix, "/query")
+	server.Router.Handle(server.Prefix(urlPrefix, "/"), PlaygroundHandler("GraphQL playground", endpoint))
 	server.Router.Handle(endpoint, srv)
 
 	return srv

@@ -1,50 +1,55 @@
 package usercase
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/antihax/optional"
-	"net/http"
-	"sealway-strava/domain"
 	"sealway-strava/domain/strava"
 	"sealway-strava/infrastructure"
-	"sealway-strava/interfaces/rest"
 	"sealway-strava/repository"
-	"strconv"
-	"strings"
-	"time"
 )
 
-type StravaConfig struct {
-	ClientId string
-	SecretId string
-}
-
 type StravaService struct {
-	*StravaConfig
-	StravaClient     *infrastructure.StravaClient
-	StravaRepository *repository.StravaRepository
+	client     *infrastructure.StravaClient
+	repository *repository.StravaRepository
 }
 
-func MakeStravaService(config *StravaConfig, client *infrastructure.StravaClient, repository *repository.StravaRepository) *StravaService {
+func MakeStravaService(client *infrastructure.StravaClient, repository *repository.StravaRepository) *StravaService {
 	return &StravaService{
-		StravaConfig:     config,
-		StravaClient:     client,
-		StravaRepository: repository,
+		client:     client,
+		repository: repository,
 	}
 }
 
+func (service *StravaService) Close() error {
+	service.client.Close()
+
+	return service.repository.Close()
+}
+
+func (service *StravaService) SaveActivityById(athleteId int64, activityId int64) (*strava.DetailedActivity, error) {
+	activity, err := service.GetActivityById(athleteId, activityId)
+	if err != nil {
+		return nil, fmt.Errorf("BackgroundWorker - SaveActivityById - GetActivityById: %s", err.Error())
+	}
+
+	err = service.repository.AddDetailedActivity(activity)
+	if err != nil {
+		return nil, fmt.Errorf("BackgroundWorker - SaveActivityById - AddDetailedActivity: %s", err.Error())
+	}
+
+	return activity, nil
+}
+
 func (service *StravaService) GetActivityById(athleteId int64, activityId int64) (*strava.DetailedActivity, error) {
-	err := rest.SyncStravaQuota.CheckQuota()
+	err := service.client.CheckQuota()
 	if err != nil {
 		return nil, err
 	}
 
 	auth := service.GetStravaAuthContext(context.Background(), athleteId)
 
-	activity, response, err := service.StravaClient.ActivitiesApi.GetActivityById(auth, activityId, &strava.ActivitiesApiGetActivityByIdOpts{
+	activity, response, err := service.client.ActivitiesApi.GetActivityById(auth, activityId, &strava.ActivitiesApiGetActivityByIdOpts{
 		IncludeAllEfforts: optional.NewBool(true),
 	})
 
@@ -52,13 +57,13 @@ func (service *StravaService) GetActivityById(athleteId int64, activityId int64)
 		return nil, fmt.Errorf("StravaService - GetActivityById - can't get activity %d : %w", activityId, err)
 	}
 
-	updateQuota(response)
+	service.client.UpdateQuota(response)
 
 	return &activity, nil
 }
 
 func (service *StravaService) GetActivitiesByAthleteId(ctx context.Context, athleteId int64, before *int64, after *int64, page *int64, limit int64) ([]strava.SummaryActivity, error) {
-	err := rest.SyncStravaQuota.CheckQuota()
+	err := service.client.CheckQuota()
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +85,7 @@ func (service *StravaService) GetActivitiesByAthleteId(ctx context.Context, athl
 		pageValue = optional.NewInt32(int32(*page))
 	}
 
-	activities, response, err := service.StravaClient.ActivitiesApi.GetLoggedInAthleteActivities(auth, &strava.ActivitiesApiGetLoggedInAthleteActivitiesOpts{
+	activities, response, err := service.client.ActivitiesApi.GetLoggedInAthleteActivities(auth, &strava.ActivitiesApiGetLoggedInAthleteActivitiesOpts{
 		Before:  beforeValue,
 		After:   afterValue,
 		Page:    pageValue,
@@ -91,7 +96,7 @@ func (service *StravaService) GetActivitiesByAthleteId(ctx context.Context, athl
 		return nil, fmt.Errorf("StravaService - GetActivitiesByAthleteId - can't get activities for %d : %w", athleteId, err)
 	}
 
-	updateQuota(response)
+	service.client.UpdateQuota(response)
 
 	return activities, nil
 }
@@ -107,77 +112,15 @@ func (service *StravaService) GetStravaAuthContext(ctx context.Context, athleteI
 
 // TODO redis cache
 func (service *StravaService) RefreshToken(athleteId int64) (*string, error) {
-	stravaToken, err := service.StravaRepository.GetToken(athleteId)
+	stravaToken, err := service.repository.GetToken(athleteId)
 	if err != nil {
 		return nil, err
 	}
 
-	accessToken, err := service.apiRefreshToken(stravaToken.Refresh)
+	accessToken, err := service.client.RefreshToken(stravaToken.Refresh)
 	if err != nil {
 		return nil, err
 	}
 
 	return accessToken, err
-}
-
-func (service *StravaService) apiRefreshToken(refreshToken string) (*string, error) {
-	url := "https://www.strava.com/api/v3/oauth/token"
-
-	values := map[string]string{
-		"client_id":     service.ClientId,
-		"client_secret": service.SecretId,
-		"grant_type":    "refresh_token",
-		"refresh_token": refreshToken,
-	}
-	data, err := json.Marshal(values)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
-	if err != nil {
-		return nil, err
-	}
-
-	var res map[string]interface{}
-	err = json.NewDecoder(resp.Body).Decode(&res)
-	if err != nil {
-		return nil, err
-	}
-
-	accessToken := res["access_token"].(string)
-
-	return &accessToken, nil
-}
-
-func updateQuota(response *http.Response) {
-	if response == nil {
-		return
-	}
-
-	limitHeader := "X-Ratelimit-Limit"
-	usageHeader := "X-Ratelimit-Usage"
-
-	limits := response.Header[limitHeader]
-	usages := response.Header[usageHeader]
-
-	if len(limits) == 0 || len(usages) == 0 {
-		return
-	}
-
-	limitValues := strings.Split(limits[0], ",")
-	usageValues := strings.Split(usages[0], ",")
-
-	limit15min, _ := strconv.Atoi(limitValues[0])
-	limitDay, _ := strconv.Atoi(limitValues[1])
-	usage15min, _ := strconv.Atoi(usageValues[0])
-	usageDay, _ := strconv.Atoi(usageValues[1])
-
-	rest.SyncStravaQuota = domain.StravaQuota{
-		Limit15min: limit15min,
-		LimitDay:   limitDay,
-		Usage15min: usage15min,
-		UsageDay:   usageDay,
-		LastUpdate: time.Now(),
-	}
 }

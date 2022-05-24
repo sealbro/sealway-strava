@@ -15,9 +15,9 @@ import (
 	"time"
 )
 
-var connectionString = graceful.EnvOrDefault("SEALWAY_ConnectionStrings__Mongo__Connection", "mongodb://localhost:27017")
-var stravaClientId = os.Getenv("SEALWAY_Services__Strava__Client")
-var stravaSecretId = os.Getenv("SEALWAY_Services__Strava__Secret")
+var connectionString = graceful.EnvOrDefault("MONGO_CONNECTION", "mongodb://localhost:27017")
+var stravaClientId = os.Getenv("STRAVA_CLIENT")
+var stravaSecretId = os.Getenv("STRAVA_SECRET")
 
 var activityBatchSize, _ = strconv.Atoi(graceful.EnvOrDefault("ACTIVITY_BATCH_SIZE", "50"))
 var activityBatchTime, _ = time.ParseDuration(graceful.EnvOrDefault("ACTIVITY_BATCH_TIME", "45s"))
@@ -57,8 +57,8 @@ func setupContainer() *dig.Container {
 			Port: port,
 		}
 	})
-	container.Provide(func() *usercase.StravaConfig {
-		return &usercase.StravaConfig{
+	container.Provide(func() *infrastructure.StravaConfig {
+		return &infrastructure.StravaConfig{
 			ClientId: stravaClientId,
 			SecretId: stravaSecretId,
 		}

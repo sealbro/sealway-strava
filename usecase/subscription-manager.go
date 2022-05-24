@@ -54,7 +54,7 @@ func (manager *SubscriptionManager) initialize() {
 	}()
 }
 
-func (manager *SubscriptionManager) Notify(activities []*strava.DetailedActivity) {
+func (manager *SubscriptionManager) Notify(activities ...*strava.DetailedActivity) {
 	if manager.closed {
 		logger.Fatal("inputActivity was closed")
 		return

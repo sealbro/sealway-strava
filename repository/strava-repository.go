@@ -50,9 +50,9 @@ func MakeStravaRepository(config *MongoConfig) (*StravaRepository, error) {
 	return repository, err
 }
 
-func (repository *StravaRepository) Close(ctx context.Context) error {
+func (repository *StravaRepository) Close() error {
 	repository.cancelRequest()
-	return repository.Client.Disconnect(ctx)
+	return repository.Client.Disconnect(context.Background())
 }
 
 func (repository *StravaRepository) AddIndex(dbName string, collection string, indexKeys interface{}, opt *options.IndexOptions) error {
@@ -151,7 +151,7 @@ func (repository *StravaRepository) GetActivity(innerCtx context.Context, activi
 
 func (repository *StravaRepository) GetActivities(innerCtx context.Context, athleteIds []int64, limit int64) ([]*strava.DetailedActivity, error) {
 	if len(athleteIds) == 0 {
-		return nil, fmt.Errorf("StravaRepository - GetActivities - 'athleteIds' is empty")
+		return nil, fmt.Errorf("stravaRepository - GetActivities - 'athleteIds' is empty")
 	}
 
 	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaActivityCollectionName)
@@ -176,8 +176,6 @@ func (repository *StravaRepository) GetActivities(innerCtx context.Context, athl
 
 	return activities, nil
 }
-
-// Helpers
 
 func createTimeoutContext() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), 15*time.Second)

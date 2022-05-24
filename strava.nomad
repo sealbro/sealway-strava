@@ -85,9 +85,9 @@ job "sealway-strava" {
 
       template {
         data = <<EOH
-SEALWAY_Services__Strava__Client={{with secret "applications/prod/default/Services/Strava"}}{{.Data.data.client_id}}{{end}}
-SEALWAY_Services__Strava__Secret={{with secret "applications/prod/default/Services/Strava"}}{{.Data.data.client_secret}}{{end}}
-SEALWAY_ConnectionStrings__Mongo__Connection=mongodb://mongo.service.consul
+STRAVA_CLIENT={{with secret "applications/prod/default/Services/Strava"}}{{.Data.data.client_id}}{{end}}
+STRAVA_SECRET={{with secret "applications/prod/default/Services/Strava"}}{{.Data.data.client_secret}}{{end}}
+MONGO_CONNECTION=mongodb://mongo.service.consul
 EOH
 
         destination = "secrets/file.env"

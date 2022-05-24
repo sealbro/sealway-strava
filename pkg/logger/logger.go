@@ -9,56 +9,52 @@ import (
 	"time"
 )
 
-var Log = &Logger{}
-
-type Logger struct{}
-
-func (logger *Logger) Tracef(format string, v ...interface{}) {
+func Tracef(format string, v ...interface{}) {
 	if os.Getenv("LOG_LEVEL") == "TRACE" {
-		logger.Printf("TRACE", format, v...)
+		Printf("TRACE", format, v...)
 	}
 }
-func (logger *Logger) Trace(message string) {
+func Trace(message string) {
 	if os.Getenv("LOG_LEVEL") == "TRACE" {
-		logger.Printf("TRACE", message)
+		Printf("TRACE", message)
 	}
 }
 
-func (logger *Logger) InfoJson(jsonObj interface{}) {
+func InfoJson(jsonObj interface{}) {
 	jsonBin, err := json.Marshal(jsonObj)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	logger.Printf("INFO", string(jsonBin))
+	Printf("INFO", string(jsonBin))
 }
 
-func (logger *Logger) Infof(format string, v ...interface{}) {
-	logger.Printf("INFO", format, v...)
+func Infof(format string, v ...interface{}) {
+	Printf("INFO", format, v...)
 }
-func (logger *Logger) Info(message string) {
-	logger.Printf("INFO", message)
-}
-
-func (logger *Logger) Warnf(format string, v ...interface{}) {
-	logger.Printf("WARN", format, v...)
-}
-func (logger *Logger) Warn(message string) {
-	logger.Printf("WARN", message)
+func Info(message string) {
+	Printf("INFO", message)
 }
 
-func (logger *Logger) Errorf(format string, v ...interface{}) {
-	logger.Printf("ERROR", format, v...)
+func Warnf(format string, v ...interface{}) {
+	Printf("WARN", format, v...)
 }
-func (logger *Logger) Error(message string) {
-	logger.Printf("ERROR", message)
+func Warn(message string) {
+	Printf("WARN", message)
 }
 
-func (logger *Logger) Fatalf(format string, v ...interface{}) {
-	logger.Printf("FATAL", format, v...)
+func Errorf(format string, v ...interface{}) {
+	Printf("ERROR", format, v...)
 }
-func (logger *Logger) Fatal(message string) {
-	logger.Printf("FATAL", message)
+func Error(message string) {
+	Printf("ERROR", message)
+}
+
+func Fatalf(format string, v ...interface{}) {
+	Printf("FATAL", format, v...)
+}
+func Fatal(message string) {
+	Printf("FATAL", message)
 }
 
 type LogEvent struct {
@@ -68,7 +64,7 @@ type LogEvent struct {
 	Message   string `json:"message"`
 }
 
-func (logger *Logger) Printf(level string, format string, v ...interface{}) {
+func Printf(level string, format string, v ...interface{}) {
 	event := &LogEvent{
 		Caller:    getCaller(2),
 		Level:     level,

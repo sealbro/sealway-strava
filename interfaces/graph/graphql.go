@@ -9,16 +9,34 @@ import (
 	_ "golang.org/x/tools/go/packages"
 	_ "golang.org/x/tools/imports"
 	"net/http"
+	"sealway-strava/domain"
 	"sealway-strava/interfaces/graph/generated"
 	"sealway-strava/interfaces/rest"
+	"sealway-strava/repository"
+	usercase "sealway-strava/usecase"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 )
 
 type GraphqlApi struct {
-	Resolvers *Resolver
 	*rest.DefaultApi
+
+	Resolvers *Resolver
+}
+
+func MakeGraphqlApi(api *rest.DefaultApi, queue *domain.ActivitiesQueue, repository *repository.StravaRepository, service *usercase.StravaService, manager *usercase.SubscriptionManager) *GraphqlApi {
+	graphqlApi := &GraphqlApi{
+		Resolvers: &Resolver{
+			ActivitiesQueue:     queue.Channel,
+			StravaService:       service,
+			SubscriptionManager: manager,
+			Repository:          repository,
+		},
+		DefaultApi: api,
+	}
+
+	return graphqlApi
 }
 
 func (server *GraphqlApi) RegisterGraphQl() *handler.Server {

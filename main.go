@@ -1,13 +1,13 @@
 package main
 
 import (
-	"context"
 	"github.com/gorilla/mux"
-	"net/http"
+	"go.uber.org/dig"
 	"os"
-	"sealway-strava/domain/strava"
+	"sealway-strava/infrastructure"
 	"sealway-strava/interfaces/graph"
 	"sealway-strava/interfaces/rest"
+	"sealway-strava/internal"
 	"sealway-strava/pkg/graceful"
 	"sealway-strava/repository"
 	"sealway-strava/usecase"
@@ -26,80 +26,62 @@ var port = graceful.EnvOrDefault("PORT", "8080")
 var applicationSlug = graceful.EnvOrDefault("SLUG", "integration-strava")
 
 func main() {
-	stravaClient := strava.NewAPIClient(strava.NewConfiguration())
+	container := setupContainer()
 
-	ctx, cancelMongo := context.WithTimeout(context.Background(), 10*time.Second)
-	err, stravaRepository := repository.InitStravaRepository(connectionString, ctx)
+	err := container.Invoke(func(application graceful.Application) {
+		application.RunAndWait()
+	})
+
+	if err != nil {
+		panic(err)
+	}
+}
+
+func setupContainer() *dig.Container {
+	container := dig.New()
+
+	container.Provide(func() *usercase.BatchConfig {
+		return &usercase.BatchConfig{
+			ActivityBatchSize: activityBatchSize,
+			ActivityBatchTime: activityBatchTime,
+		}
+	})
+	container.Provide(func() *rest.ApiConfig {
+		return &rest.ApiConfig{
+			ApplicationSlug: applicationSlug,
+			Router:          mux.NewRouter(),
+		}
+	})
+	container.Provide(func() *internal.ServerConfig {
+		return &internal.ServerConfig{
+			Port: port,
+		}
+	})
+	container.Provide(func() *usercase.StravaConfig {
+		return &usercase.StravaConfig{
+			ClientId: stravaClientId,
+			SecretId: stravaSecretId,
+		}
+	})
+	container.Provide(func() *repository.MongoConfig {
+		return &repository.MongoConfig{
+			ConnectionString: connectionString,
+		}
+	})
+
+	container.Provide(usercase.MakeSubscriptionManager)
+	container.Provide(usercase.MakeStravaService)
+	container.Provide(infrastructure.MakeStravaClient)
+	err := container.Provide(repository.MakeStravaRepository)
 	if err != nil {
 		panic(err)
 	}
 
-	subscriptionManager := &usercase.SubscriptionManager{
-		ActivityBatchSize: activityBatchSize,
-		ActivityBatchTime: activityBatchTime,
-	}
-	subscriptionManager.Init()
+	container.Provide(usercase.MakeBackgroundWorker)
+	container.Provide(rest.MakeRestApi)
+	container.Provide(rest.MakeSubscriptionApi)
+	container.Provide(graph.MakeGraphqlApi)
+	container.Provide(internal.MakeApplication)
 
-	var stravaService = &usercase.StravaService{
-		ClientId:         stravaClientId,
-		SecretId:         stravaSecretId,
-		StravaClient:     stravaClient,
-		StravaRepository: stravaRepository,
-	}
-
-	var backgroundWorker = &usercase.BackgroundWorker{
-		SubscriptionManager: subscriptionManager,
-		StravaService:       stravaService,
-		StravaRepository:    stravaRepository,
-	}
-	activitiesQueue := backgroundWorker.RunBackgroundWorker()
-
-	router := mux.NewRouter()
-	defaultApi := &rest.DefaultApi{
-		Router:          router,
-		ApplicationSlug: applicationSlug,
-	}
-
-	var restApi = &rest.SubscriptionApi{
-		ActivitiesQueue: activitiesQueue,
-		DefaultApi:      defaultApi,
-	}
-	restApi.RegisterHealth()
-	restApi.RegisterApiRoutes()
-
-	graphqlApi := graph.GraphqlApi{
-		Resolvers: &graph.Resolver{
-			ActivitiesQueue:     activitiesQueue,
-			StravaService:       stravaService,
-			SubscriptionManager: subscriptionManager,
-			Repository:          stravaRepository,
-		},
-		DefaultApi: defaultApi,
-	}
-	graphqlApi.RegisterGraphQl()
-
-	apiServer := &http.Server{
-		Addr:    ":" + port,
-		Handler: router,
-	}
-
-	var graceful = &graceful.Graceful{
-		StartAction: func() error {
-			return apiServer.ListenAndServe()
-		},
-		DeferAction: func(ctx context.Context) error {
-			close(activitiesQueue)
-
-			subscriptionManager.Close()
-			cancelMongo()
-			stravaRepository.Client.Disconnect(ctx)
-
-			return nil
-		},
-		ShutdownAction: func(ctx context.Context) error {
-			return apiServer.Shutdown(ctx)
-		},
-	}
-
-	graceful.RunAndWait()
+	return container
 }

@@ -17,19 +17,26 @@ var stravaSubscriptionCollectionName = "Subscription"
 var stravaActivityCollectionName = "Activity"
 var stravaTokenCollectionName = "Token"
 
-type StravaRepository struct {
-	Client *mongo.Client
+type MongoConfig struct {
+	ConnectionString string
 }
 
-func InitStravaRepository(connectionString string, ctx context.Context) (error, *StravaRepository) {
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(connectionString))
+type StravaRepository struct {
+	*mongo.Client
+	cancelRequest context.CancelFunc
+}
+
+func MakeStravaRepository(config *MongoConfig) (*StravaRepository, error) {
+	ctx, cancelMongo := context.WithTimeout(context.Background(), 10*time.Second)
+
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.ConnectionString))
 	if err != nil {
-		logger.Log.Fatal(err.Error())
-		return err, nil
+		return nil, err
 	}
 
 	repository := &StravaRepository{
-		Client: client,
+		Client:        client,
+		cancelRequest: cancelMongo,
 	}
 
 	repository.AddIndex(stravaDataBaseName, stravaActivityCollectionName, bson.M{"athlete.id": 1}, nil)
@@ -40,7 +47,12 @@ func InitStravaRepository(connectionString string, ctx context.Context) (error, 
 	})
 	repository.AddIndex(stravaDataBaseName, stravaSubscriptionCollectionName, bson.D{{"data.owner_id", 1}, {"data.object_id", 1}}, nil)
 
-	return err, repository
+	return repository, err
+}
+
+func (repository *StravaRepository) Close(ctx context.Context) error {
+	repository.cancelRequest()
+	return repository.Client.Disconnect(ctx)
 }
 
 func (repository *StravaRepository) AddIndex(dbName string, collection string, indexKeys interface{}, opt *options.IndexOptions) error {
@@ -53,7 +65,7 @@ func (repository *StravaRepository) AddIndex(dbName string, collection string, i
 		return err
 	}
 
-	logger.Log.Tracef("Index created: %s", indexName)
+	logger.Tracef("Index created: %s", indexName)
 
 	return nil
 }
@@ -157,7 +169,7 @@ func (repository *StravaRepository) GetActivities(innerCtx context.Context, athl
 		var activity *strava.DetailedActivity
 		err := cursor.Decode(&activity)
 		if err != nil {
-			logger.Log.Tracef("decode activity : %s", err.Error())
+			logger.Tracef("decode activity : %s", err.Error())
 		}
 		activities = append(activities, activity)
 	}

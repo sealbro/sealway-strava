@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"sealway-strava/domain"
 	"sealway-strava/domain/strava"
+	"sealway-strava/infrastructure"
 	"sealway-strava/interfaces/rest"
 	"sealway-strava/repository"
 	"strconv"
@@ -16,11 +17,23 @@ import (
 	"time"
 )
 
+type StravaConfig struct {
+	ClientId string
+	SecretId string
+}
+
 type StravaService struct {
-	StravaClient     *strava.APIClient
-	ClientId         string
-	SecretId         string
+	*StravaConfig
+	StravaClient     *infrastructure.StravaClient
 	StravaRepository *repository.StravaRepository
+}
+
+func MakeStravaService(config *StravaConfig, client *infrastructure.StravaClient, repository *repository.StravaRepository) *StravaService {
+	return &StravaService{
+		StravaConfig:     config,
+		StravaClient:     client,
+		StravaRepository: repository,
+	}
 }
 
 func (service *StravaService) GetActivityById(athleteId int64, activityId int64) (*strava.DetailedActivity, error) {
@@ -36,7 +49,7 @@ func (service *StravaService) GetActivityById(athleteId int64, activityId int64)
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("can't get activity %d : %w", activityId, err)
+		return nil, fmt.Errorf("StravaService - GetActivityById - can't get activity %d : %w", activityId, err)
 	}
 
 	updateQuota(response)
@@ -75,7 +88,7 @@ func (service *StravaService) GetActivitiesByAthleteId(ctx context.Context, athl
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("can't get activities for %d : %w", athleteId, err)
+		return nil, fmt.Errorf("StravaService - GetActivitiesByAthleteId - can't get activities for %d : %w", athleteId, err)
 	}
 
 	updateQuota(response)

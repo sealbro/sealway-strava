@@ -8,9 +8,19 @@ import (
 	"sealway-strava/pkg/logger"
 )
 
-type DefaultApi struct {
+type ApiConfig struct {
 	Router          *mux.Router
 	ApplicationSlug string
+}
+
+type DefaultApi struct {
+	*ApiConfig
+}
+
+func MakeRestApi(config *ApiConfig) *DefaultApi {
+	return &DefaultApi{
+		ApiConfig: config,
+	}
 }
 
 func (api *SubscriptionApi) RegisterHealth() {
@@ -26,7 +36,7 @@ func (api *DefaultApi) Prefix(serverName string, path string) string {
 }
 
 func respondWithError(w http.ResponseWriter, code int, message string) {
-	logger.Log.Error(message)
+	logger.Error(message)
 
 	respondWithJSON(w, code, map[string]string{"error": message})
 }

@@ -21,7 +21,7 @@ func (r *mutationResolver) AddToken(ctx context.Context, tokens []*model.NewAthl
 			Refresh:   input.Refresh,
 		})
 
-		logger.Log.Infof("Refresh token for [%d]", input.AthleteID)
+		logger.Infof("Refresh token for [%d]", input.AthleteID)
 
 		if err != nil {
 			errResult = err

@@ -10,9 +10,13 @@ import (
 	"time"
 )
 
-type SubscriptionManager struct {
+type BatchConfig struct {
 	ActivityBatchSize int
 	ActivityBatchTime time.Duration
+}
+
+type SubscriptionManager struct {
+	*BatchConfig
 
 	subscribers      map[string]chan []*strava.DetailedActivity
 	outputActivities chan []*strava.DetailedActivity
@@ -20,7 +24,17 @@ type SubscriptionManager struct {
 	closed           bool
 }
 
-func (manager *SubscriptionManager) Init() {
+func MakeSubscriptionManager(config *BatchConfig) *SubscriptionManager {
+	manager := &SubscriptionManager{
+		BatchConfig: config,
+	}
+
+	manager.initialize()
+
+	return manager
+}
+
+func (manager *SubscriptionManager) initialize() {
 	manager.subscribers = map[string]chan []*strava.DetailedActivity{}
 	manager.inputActivity = make(chan *strava.DetailedActivity)
 	manager.outputActivities = batching.Process(manager.inputActivity, manager.ActivityBatchSize, manager.ActivityBatchTime)
@@ -32,7 +46,7 @@ func (manager *SubscriptionManager) Init() {
 				activityIds = fmt.Sprintf("%d,%s", a.ID, activityIds)
 			}
 
-			logger.Log.Infof("Send activities [%s] to subscribers [%d]", activityIds, len(manager.subscribers))
+			logger.Infof("Send activities [%s] to subscribers [%d]", activityIds, len(manager.subscribers))
 			for _, subscriber := range manager.subscribers {
 				subscriber <- activities
 			}
@@ -42,7 +56,7 @@ func (manager *SubscriptionManager) Init() {
 
 func (manager *SubscriptionManager) Notify(activities []*strava.DetailedActivity) {
 	if manager.closed {
-		logger.Log.Fatal("inputActivity was closed")
+		logger.Fatal("inputActivity was closed")
 		return
 	}
 
@@ -56,12 +70,12 @@ func (manager *SubscriptionManager) AddSubscriber(ctx context.Context) chan []*s
 	ch := make(chan []*strava.DetailedActivity)
 	manager.subscribers[key] = ch
 
-	logger.Log.Infof("Added new subscriber %s", key)
+	logger.Infof("Added new subscriber %s", key)
 
 	go func() {
 		<-ctx.Done()
 		manager.RemoveSubscriber(key)
-		logger.Log.Infof("Removed subscriber %s", key)
+		logger.Infof("Removed subscriber %s", key)
 	}()
 
 	return ch

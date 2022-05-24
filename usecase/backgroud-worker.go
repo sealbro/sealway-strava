@@ -16,12 +16,24 @@ type BackgroundWorker struct {
 	SubscriptionManager *SubscriptionManager
 }
 
-func (worker *BackgroundWorker) RunBackgroundWorker() chan domain.StravaSubscriptionData {
+func MakeBackgroundWorker(repository *repository.StravaRepository, service *StravaService, manager *SubscriptionManager) *domain.ActivitiesQueue {
+	worker := &BackgroundWorker{
+		StravaRepository:    repository,
+		StravaService:       service,
+		SubscriptionManager: manager,
+	}
+
+	return worker.RunBackgroundWorker()
+}
+
+func (worker *BackgroundWorker) RunBackgroundWorker() *domain.ActivitiesQueue {
 	inboundQueue := make(chan domain.StravaSubscriptionData)
 
 	go worker.process(inboundQueue)
 
-	return inboundQueue
+	return &domain.ActivitiesQueue{
+		Channel: inboundQueue,
+	}
 }
 
 func (worker *BackgroundWorker) process(inboundQueue chan domain.StravaSubscriptionData) {
@@ -34,17 +46,17 @@ func (worker *BackgroundWorker) process(inboundQueue chan domain.StravaSubscript
 
 		err := retry.Do(
 			func() error {
-				logger.Log.Infof("Start attempt process for activity [%d] with athlete [%d]", data.ActivityId, data.AthleteId)
+				logger.Infof("Start attempt process for activity [%d] with athlete [%d]", data.ActivityId, data.AthleteId)
 				activity, err := worker.processTask(data)
 				if err != nil {
-					logger.Log.Error(err.Error())
+					logger.Error(err.Error())
 				}
 
 				if activity != nil {
 					worker.SubscriptionManager.Notify([]*strava.DetailedActivity{activity})
 				}
 
-				logger.Log.Infof("Finish attempt process for activity [%d] with athlete [%d]", data.ActivityId, data.AthleteId)
+				logger.Infof("Finish attempt process for activity [%d] with athlete [%d]", data.ActivityId, data.AthleteId)
 
 				return err
 			},
@@ -56,21 +68,19 @@ func (worker *BackgroundWorker) process(inboundQueue chan domain.StravaSubscript
 		)
 
 		if err != nil {
-			logger.Log.Error(err.Error())
+			logger.Error(err.Error())
 		}
 	}
 }
 
 func (worker *BackgroundWorker) processTask(data domain.StravaSubscriptionData) (*strava.DetailedActivity, error) {
-	// convert athlete id
 	athleteId := data.AthleteId
 
-	// save subscription
 	if err := worker.StravaRepository.AddNewSubscription(&domain.StravaSubscription{
 		ExpireAt: time.Now().Add(7 * 24 * time.Hour),
 		Data:     data,
 	}); err != nil {
-		return nil, fmt.Errorf("can't insert subscription for activity [%d] for athlete [%d] : %s", data.ActivityId, athleteId, err.Error())
+		return nil, fmt.Errorf("BackgroundWorker - processTask - can't insert subscription for activity [%d] for athlete [%d] : %s", data.ActivityId, athleteId, err.Error())
 	}
 
 	var activity *strava.DetailedActivity
@@ -92,13 +102,13 @@ func (worker *BackgroundWorker) processTask(data domain.StravaSubscriptionData) 
 			}
 
 			if activity, err = worker.StravaRepository.UpdateDetailedActivity(data.ActivityId, props); err != nil {
-				return nil, fmt.Errorf("can't update activity [%d] for athlete [%d] : %s", data.ActivityId, athleteId, err.Error())
+				return nil, fmt.Errorf("BackgroundWorker - processTask - can't update activity [%d] for athlete [%d] : %s", data.ActivityId, athleteId, err.Error())
 			}
 		case "create":
 			fallthrough
 		default:
 			if activity, err = worker.SaveActivityById(athleteId, data.ActivityId); err != nil {
-				return nil, fmt.Errorf("can't save activity [%d] for athlete [%d] : %s", data.ActivityId, athleteId, err.Error())
+				return nil, fmt.Errorf("BackgroundWorker - processTask - can't save activity [%d] for athlete [%d] : %s", data.ActivityId, athleteId, err.Error())
 			}
 		}
 	}
@@ -109,12 +119,12 @@ func (worker *BackgroundWorker) processTask(data domain.StravaSubscriptionData) 
 func (worker *BackgroundWorker) SaveActivityById(athleteId int64, activityId int64) (*strava.DetailedActivity, error) {
 	activity, err := worker.StravaService.GetActivityById(athleteId, activityId)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("BackgroundWorker - SaveActivityById - GetActivityById: %s", err.Error())
 	}
 
 	err = worker.StravaRepository.AddDetailedActivity(activity)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("BackgroundWorker - SaveActivityById - AddDetailedActivity: %s", err.Error())
 	}
 
 	return activity, nil

@@ -10,6 +10,10 @@ import (
 	"time"
 )
 
+type Application interface {
+	RunAndWait()
+}
+
 type Graceful struct {
 	StartAction    func() error
 	DeferAction    func(ctx context.Context) error
@@ -22,26 +26,26 @@ func (graceful *Graceful) RunAndWait() {
 
 	go func() {
 		if err := graceful.StartAction(); err != nil && err != http.ErrServerClosed {
-			logger.Log.Fatalf("listen: %s\n", err)
+			logger.Fatalf("listen: %s\n", err)
 		}
 	}()
-	logger.Log.Info("Server Started")
+	logger.Info("Server Started")
 
 	<-done
-	logger.Log.Info("Server Stopped")
+	logger.Info("Server Stopped")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer func() {
 		if err := graceful.DeferAction(ctx); err != nil {
-			logger.Log.Fatalf("Server  Failed:%+v", err)
+			logger.Fatalf("Server  Failed:%+v", err)
 		}
 		cancel()
 	}()
 
 	if err := graceful.ShutdownAction(ctx); err != nil {
-		logger.Log.Fatalf("Server Shutdown Failed:%+v", err)
+		logger.Fatalf("Server Shutdown Failed:%+v", err)
 	}
-	logger.Log.Info("Server Exited Properly")
+	logger.Info("Server Exited Properly")
 }
 
 func EnvOrDefault(key, fallback string) string {

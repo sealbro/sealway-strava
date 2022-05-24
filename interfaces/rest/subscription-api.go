@@ -20,8 +20,20 @@ var SyncStravaQuota = domain.StravaQuota{
 }
 
 type SubscriptionApi struct {
-	ActivitiesQueue chan domain.StravaSubscriptionData
 	*DefaultApi
+
+	ActivitiesQueue chan domain.StravaSubscriptionData
+}
+
+func MakeSubscriptionApi(queue *domain.ActivitiesQueue, api *DefaultApi) *SubscriptionApi {
+	var restApi = &SubscriptionApi{
+		ActivitiesQueue: queue.Channel,
+		DefaultApi:      api,
+	}
+	restApi.RegisterHealth()
+	restApi.RegisterApiRoutes()
+
+	return restApi
 }
 
 func (api *SubscriptionApi) RegisterApiRoutes() {
@@ -37,7 +49,7 @@ func (api *SubscriptionApi) RegisterApiRoutes() {
 func (api *SubscriptionApi) verify(w http.ResponseWriter, r *http.Request) {
 	keys, _ := r.URL.Query()["hub.challenge"]
 
-	logger.Log.Infof("Verify [%s]", r.URL.Path)
+	logger.Infof("Verify [%s]", r.URL.Path)
 
 	respondWithJSON(w, http.StatusOK, &domain.StravaVerify{Challenge: keys[0]})
 }
@@ -45,7 +57,7 @@ func (api *SubscriptionApi) verify(w http.ResponseWriter, r *http.Request) {
 func (api *SubscriptionApi) subscription(w http.ResponseWriter, r *http.Request) {
 
 	all, _ := io.ReadAll(r.Body)
-	logger.Log.Infof("Request to %s - %s", r.RequestURI, string(all))
+	logger.Infof("Request to %s - %s", r.RequestURI, string(all))
 
 	var data domain.StravaSubscriptionData
 	reader := bytes.NewReader(all)

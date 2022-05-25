@@ -58,15 +58,15 @@ func Fatal(message string) {
 }
 
 type LogEvent struct {
-	Timestamp string `json:"@timestamp"`
-	Level     string `json:"level"`
-	Caller    string `json:"caller"`
-	Message   string `json:"message"`
+	Timestamp string `json:"@t"`
+	Level     string `json:"@l"`
+	Source    string `json:"@s"`
+	Message   string `json:"@m"`
 }
 
 func Printf(level string, format string, v ...interface{}) {
 	event := &LogEvent{
-		Caller:    getCaller(2),
+		Source:    getSource(2),
 		Level:     level,
 		Timestamp: time.Now().Format(time.RFC3339),
 		Message:   fmt.Sprintf(format, v...),
@@ -93,7 +93,7 @@ func Printf(level string, format string, v ...interface{}) {
 	}
 }
 
-func getCaller(callDepth int) string {
+func getSource(callDepth int) string {
 	_, file, line, ok := runtime.Caller(callDepth + 1)
 	if !ok {
 		file = "???"

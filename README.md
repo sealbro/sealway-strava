@@ -1,5 +1,31 @@
 # sealway-strava
-sealway strava integration
+
+Caching request service to strava.
+Entities cached/stored in mongodb and you can get them with graphQL
+
+![build](https://github.com/sealbro/sealway-strava/actions/workflows/docker.yml/badge.svg)
+[![Docker Pulls](https://badgen.net/docker/pulls/sealway/strava?icon=docker&label=pulls)](https://hub.docker.com/r/sealway/strava/)
+[![Docker Image Size](https://badgen.net/docker/size/sealway/strava?icon=docker&label=image%20size)](https://hub.docker.com/r/sealway/strava/)
+
+
+## Environments
+
+- `MONGO_CONNECTION` - mongo connection string
+- `STRAVA_CLIENT` - strava client id
+- `STRAVA_SECRET` - strava secret id
+- `ACTIVITY_BATCH_SIZE` (50) - max batch size, after which data is sent to subscribers to subscribers
+- `ACTIVITY_BATCH_TIME` (45s) - time after which data is sent to subscribers
+- `SLUG` (integration-strava) - prefix for url path
+- `PORT` (8080) - server port
+
+## API Endpoints
+
+- GET `{SLUG}/healthz` - health check
+- GET `{SLUG}/api/quota` - actual strava's request quota
+- GET `{SLUG}/api/subscription` - used for registration strava callback
+- POST `{SLUG}/api/subscription` - there strava sends user changes
+- GET `{SLUG}/graphql/` - graphQL playgroud
+- [More](./interfaces/graph/schema.graphqls) about graphQL queries / mutations / subscriptions
 
 ## Debug
 

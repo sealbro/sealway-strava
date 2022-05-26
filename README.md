@@ -26,7 +26,7 @@ sequenceDiagram
 - `STRAVA_CLIENT` - strava client id
 - `STRAVA_SECRET` - strava secret id
 - `MONGO_CONNECTION` (localhost) - mongo connection string
-- `ACTIVITY_BATCH_SIZE` (50) - max batch size, after which data is sent to subscribers to subscribers
+- `ACTIVITY_BATCH_SIZE` (50) - max batch size, after which data is sent to subscribers
 - `ACTIVITY_BATCH_TIME` (45s) - time after which data is sent to subscribers
 - `SLUG` (integration-strava) - prefix for url path
 - `PORT` (8080) - server port
@@ -35,7 +35,7 @@ sequenceDiagram
 
 - GET `{SLUG}/healthz` - health check
 - GET `{SLUG}/api/quota` - actual strava's request quota
-- GET `{SLUG}/api/subscription` - used for registration strava callback
+- GET `{SLUG}/api/subscription` - used for registration strava [webhook](https://developers.strava.com/docs/webhooks/)
 - POST `{SLUG}/api/subscription` - strava sends changes here
 - GET `{SLUG}/graphql/` - graphQL playgroud
 - [More](./interfaces/graph/schema.graphqls) about graphQL queries / mutations / subscriptions
@@ -45,6 +45,8 @@ sequenceDiagram
 - set environments
   - `STRAVA_CLIENT`, `STRAVA_SECRET`, `MONGO_CONNECTION`
 - localhost mongo `docker run -d --restart=always --name mongodb -p 27017:27017 mongo`
+- local service `docker run -d --restart=always --name strava-graphql --network host -e STRAVA_CLIENT=<client_id> -e STRAVA_SECRET=<secret_id> sealway/strava`
+  - strava api credentials [here](https://www.strava.com/settings/api)
 - [graphql queries docs](https://graphql.org/learn/queries/)
 - [timestamp converter](https://www.epochconverter.com/)
 

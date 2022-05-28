@@ -47,10 +47,3 @@ func (graceful *Graceful) RunAndWait() {
 	}
 	logger.Info("Server Exited Properly")
 }
-
-func EnvOrDefault(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
-	}
-	return fallback
-}

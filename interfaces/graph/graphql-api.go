@@ -13,7 +13,7 @@ import (
 	"sealway-strava/interfaces/graph/generated"
 	"sealway-strava/interfaces/rest"
 	"sealway-strava/repository"
-	usercase "sealway-strava/usecase"
+	"sealway-strava/usecase"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"

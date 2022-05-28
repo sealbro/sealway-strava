@@ -20,15 +20,6 @@ func Trace(message string) {
 	}
 }
 
-func InfoJson(jsonObj interface{}) {
-	jsonBin, err := json.Marshal(jsonObj)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	Printf("INFO", string(jsonBin))
-}
-
 func Infof(format string, v ...interface{}) {
 	Printf("INFO", format, v...)
 }
@@ -83,7 +74,9 @@ func Printf(level string, format string, v ...interface{}) {
 		dest = os.Stderr
 	}
 
-	_, err = dest.WriteString(fmt.Sprintf("%s\n", jsonText))
+	jsonText = append(jsonText, '\n')
+
+	_, err = dest.Write(jsonText)
 	if err != nil {
 		panic(err)
 	}

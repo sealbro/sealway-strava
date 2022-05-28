@@ -3,11 +3,10 @@ package internal
 import (
 	"context"
 	"net/http"
-	"sealway-strava/domain"
 	"sealway-strava/interfaces/graph"
 	"sealway-strava/interfaces/rest"
+	"sealway-strava/pkg/closer"
 	"sealway-strava/pkg/graceful"
-	usercase "sealway-strava/usecase"
 )
 
 type ServerConfig struct {
@@ -18,7 +17,7 @@ type SealwayStravaApp struct {
 	*graceful.Graceful
 }
 
-func MakeApplication(config *ServerConfig, apiConfig *rest.ApiConfig, queue *domain.ActivitiesQueue, manager *usercase.SubscriptionManager, service *usercase.StravaService, restApi *rest.SubscriptionApi, graphApi *graph.GraphqlApi) graceful.Application {
+func MakeApplication(collection *closer.CloserCollection, config *ServerConfig, apiConfig *rest.ApiConfig, restApi *rest.SubscriptionApi, graphApi *graph.GraphqlApi) graceful.Application {
 	restApi.RegisterHealth()
 	restApi.RegisterApiRoutes()
 	graphApi.RegisterGraphQl()
@@ -33,10 +32,7 @@ func MakeApplication(config *ServerConfig, apiConfig *rest.ApiConfig, queue *dom
 			return apiServer.ListenAndServe()
 		},
 		DeferAction: func(ctx context.Context) error {
-			queue.Close()
-			manager.Close()
-
-			return service.Close()
+			return collection.Close(ctx)
 		},
 		ShutdownAction: func(ctx context.Context) error {
 			return apiServer.Shutdown(ctx)

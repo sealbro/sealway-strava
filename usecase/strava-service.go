@@ -6,6 +6,7 @@ import (
 	"github.com/antihax/optional"
 	"sealway-strava/domain/strava"
 	"sealway-strava/infrastructure"
+	"sealway-strava/pkg/closer"
 	"sealway-strava/repository"
 )
 
@@ -14,26 +15,30 @@ type StravaService struct {
 	repository *repository.StravaRepository
 }
 
-func MakeStravaService(client *infrastructure.StravaClient, repository *repository.StravaRepository) *StravaService {
-	return &StravaService{
+func MakeStravaService(collection *closer.CloserCollection, client *infrastructure.StravaClient, repository *repository.StravaRepository) *StravaService {
+	service := &StravaService{
 		client:     client,
 		repository: repository,
 	}
+
+	collection.Add(service)
+
+	return service
 }
 
-func (service *StravaService) Close() error {
+func (service *StravaService) Close(ctx context.Context) error {
 	service.client.Close()
 
-	return service.repository.Close()
+	return service.repository.Close(ctx)
 }
 
-func (service *StravaService) SaveActivityById(athleteId int64, activityId int64) (*strava.DetailedActivity, error) {
-	activity, err := service.GetActivityById(athleteId, activityId)
+func (service *StravaService) SaveActivityById(ctx context.Context, athleteId int64, activityId int64) (*strava.DetailedActivity, error) {
+	activity, err := service.GetActivityById(ctx, athleteId, activityId)
 	if err != nil {
 		return nil, fmt.Errorf("BackgroundWorker - SaveActivityById - GetActivityById: %s", err.Error())
 	}
 
-	err = service.repository.AddDetailedActivity(activity)
+	err = service.repository.AddDetailedActivity(ctx, activity)
 	if err != nil {
 		return nil, fmt.Errorf("BackgroundWorker - SaveActivityById - AddDetailedActivity: %s", err.Error())
 	}
@@ -41,13 +46,13 @@ func (service *StravaService) SaveActivityById(athleteId int64, activityId int64
 	return activity, nil
 }
 
-func (service *StravaService) GetActivityById(athleteId int64, activityId int64) (*strava.DetailedActivity, error) {
+func (service *StravaService) GetActivityById(ctx context.Context, athleteId int64, activityId int64) (*strava.DetailedActivity, error) {
 	err := service.client.CheckQuota()
 	if err != nil {
 		return nil, err
 	}
 
-	auth := service.GetStravaAuthContext(context.Background(), athleteId)
+	auth := service.getStravaAuthContext(ctx, athleteId)
 
 	activity, response, err := service.client.ActivitiesApi.GetActivityById(auth, activityId, &strava.ActivitiesApiGetActivityByIdOpts{
 		IncludeAllEfforts: optional.NewBool(true),
@@ -68,7 +73,7 @@ func (service *StravaService) GetActivitiesByAthleteId(ctx context.Context, athl
 		return nil, err
 	}
 
-	auth := service.GetStravaAuthContext(ctx, athleteId)
+	auth := service.getStravaAuthContext(ctx, athleteId)
 
 	var beforeValue optional.Int32
 	var afterValue optional.Int32
@@ -101,8 +106,8 @@ func (service *StravaService) GetActivitiesByAthleteId(ctx context.Context, athl
 	return activities, nil
 }
 
-func (service *StravaService) GetStravaAuthContext(ctx context.Context, athleteId int64) context.Context {
-	token, err := service.RefreshToken(athleteId)
+func (service *StravaService) getStravaAuthContext(ctx context.Context, athleteId int64) context.Context {
+	token, err := service.RefreshToken(ctx, athleteId)
 	if err != nil {
 		return ctx
 	}
@@ -111,13 +116,13 @@ func (service *StravaService) GetStravaAuthContext(ctx context.Context, athleteI
 }
 
 // TODO redis cache
-func (service *StravaService) RefreshToken(athleteId int64) (*string, error) {
-	stravaToken, err := service.repository.GetToken(athleteId)
+func (service *StravaService) RefreshToken(ctx context.Context, athleteId int64) (*string, error) {
+	stravaToken, err := service.repository.GetToken(ctx, athleteId)
 	if err != nil {
 		return nil, err
 	}
 
-	accessToken, err := service.client.RefreshToken(stravaToken.Refresh)
+	accessToken, err := service.client.RefreshToken(ctx, stravaToken.Refresh)
 	if err != nil {
 		return nil, err
 	}

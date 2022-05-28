@@ -8,6 +8,8 @@ import (
 	"sealway-strava/interfaces/graph"
 	"sealway-strava/interfaces/rest"
 	"sealway-strava/internal"
+	"sealway-strava/pkg/closer"
+	"sealway-strava/pkg/env"
 	"sealway-strava/pkg/graceful"
 	"sealway-strava/repository"
 	"sealway-strava/usecase"
@@ -15,15 +17,15 @@ import (
 	"time"
 )
 
-var connectionString = graceful.EnvOrDefault("MONGO_CONNECTION", "mongodb://localhost:27017")
+var connectionString = env.EnvOrDefault("MONGO_CONNECTION", "mongodb://localhost:27017")
 var stravaClientId = os.Getenv("STRAVA_CLIENT")
 var stravaSecretId = os.Getenv("STRAVA_SECRET")
 
-var activityBatchSize, _ = strconv.Atoi(graceful.EnvOrDefault("ACTIVITY_BATCH_SIZE", "50"))
-var activityBatchTime, _ = time.ParseDuration(graceful.EnvOrDefault("ACTIVITY_BATCH_TIME", "45s"))
+var activityBatchSize, _ = strconv.Atoi(env.EnvOrDefault("ACTIVITY_BATCH_SIZE", "50"))
+var activityBatchTime, _ = time.ParseDuration(env.EnvOrDefault("ACTIVITY_BATCH_TIME", "45s"))
 
-var port = graceful.EnvOrDefault("PORT", "8080")
-var applicationSlug = graceful.EnvOrDefault("SLUG", "integration-strava")
+var port = env.EnvOrDefault("PORT", "8080")
+var applicationSlug = env.EnvOrDefault("SLUG", "integration-strava")
 
 func main() {
 	container := setupContainer()
@@ -81,6 +83,7 @@ func setupContainer() *dig.Container {
 	container.Provide(rest.MakeRestApi)
 	container.Provide(rest.MakeSubscriptionApi)
 	container.Provide(graph.MakeGraphqlApi)
+	container.Provide(closer.MakeCloserCollection)
 	container.Provide(internal.MakeApplication)
 
 	return container

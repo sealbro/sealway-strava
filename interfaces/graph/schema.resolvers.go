@@ -71,7 +71,7 @@ func (r *queryResolver) Activities(ctx context.Context, athleteIds []int64, limi
 }
 
 func (r *queryResolver) Token(ctx context.Context, athleteID int64) ([]*model.AthleteToken, error) {
-	token, err := r.StravaService.RefreshToken(athleteID)
+	token, err := r.StravaService.RefreshToken(ctx, athleteID)
 	if err != nil {
 		return nil, err
 	}

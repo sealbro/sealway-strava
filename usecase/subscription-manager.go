@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"sealway-strava/domain/strava"
 	"sealway-strava/pkg/batching"
+	"sealway-strava/pkg/closer"
 	"sealway-strava/pkg/logger"
 	"time"
 )
@@ -24,7 +25,7 @@ type SubscriptionManager struct {
 	closed           bool
 }
 
-func MakeSubscriptionManager(config *BatchConfig) *SubscriptionManager {
+func MakeSubscriptionManager(collection *closer.CloserCollection, config *BatchConfig) *SubscriptionManager {
 	manager := &SubscriptionManager{
 		BatchConfig:   config,
 		subscribers:   map[string]chan []*strava.DetailedActivity{},
@@ -47,6 +48,8 @@ func MakeSubscriptionManager(config *BatchConfig) *SubscriptionManager {
 			}
 		}
 	}()
+
+	collection.Add(manager)
 
 	return manager
 }
@@ -87,7 +90,7 @@ func (manager *SubscriptionManager) RemoveSubscriber(key string) {
 	delete(manager.subscribers, key)
 }
 
-func (manager *SubscriptionManager) Close() {
+func (manager *SubscriptionManager) Close(context.Context) error {
 	manager.closed = true
 
 	for key, subscriber := range manager.subscribers {
@@ -96,4 +99,6 @@ func (manager *SubscriptionManager) Close() {
 	}
 
 	close(manager.inputActivity)
+
+	return nil
 }

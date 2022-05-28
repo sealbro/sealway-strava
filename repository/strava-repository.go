@@ -23,11 +23,11 @@ type MongoConfig struct {
 
 type StravaRepository struct {
 	*mongo.Client
-	cancelRequest context.CancelFunc
 }
 
 func MakeStravaRepository(config *MongoConfig) (*StravaRepository, error) {
 	ctx, cancelMongo := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelMongo()
 
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.ConnectionString))
 	if err != nil {
@@ -35,29 +35,23 @@ func MakeStravaRepository(config *MongoConfig) (*StravaRepository, error) {
 	}
 
 	repository := &StravaRepository{
-		Client:        client,
-		cancelRequest: cancelMongo,
+		Client: client,
 	}
 
-	repository.AddIndex(stravaDataBaseName, stravaActivityCollectionName, bson.M{"athlete.id": 1}, nil)
-
-	expireAfterSeconds := int32(0)
-	repository.AddIndex(stravaDataBaseName, stravaSubscriptionCollectionName, bson.D{{"expire_at", 1}}, &options.IndexOptions{
-		ExpireAfterSeconds: &expireAfterSeconds,
-	})
-	repository.AddIndex(stravaDataBaseName, stravaSubscriptionCollectionName, bson.D{{"data.owner_id", 1}, {"data.object_id", 1}}, nil)
+	repository.addIndex(ctx, stravaDataBaseName, stravaActivityCollectionName, bson.M{"athlete.id": 1}, nil)
+	repository.addIndex(ctx, stravaDataBaseName, stravaSubscriptionCollectionName, bson.D{{"expire_at", 1}}, options.Index().SetExpireAfterSeconds(0))
+	repository.addIndex(ctx, stravaDataBaseName, stravaSubscriptionCollectionName, bson.D{{"data.owner_id", 1}, {"data.object_id", 1}}, nil)
 
 	return repository, err
 }
 
-func (repository *StravaRepository) Close() error {
-	repository.cancelRequest()
-	return repository.Client.Disconnect(context.Background())
+func (repository *StravaRepository) Close(ctx context.Context) error {
+	return repository.Client.Disconnect(ctx)
 }
 
-func (repository *StravaRepository) AddIndex(dbName string, collection string, indexKeys interface{}, opt *options.IndexOptions) error {
+func (repository *StravaRepository) addIndex(ctx context.Context, dbName string, collection string, indexKeys interface{}, opt *options.IndexOptions) error {
 	serviceCollection := repository.Client.Database(dbName).Collection(collection)
-	indexName, err := serviceCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+	indexName, err := serviceCollection.Indexes().CreateOne(ctx, mongo.IndexModel{
 		Keys:    indexKeys,
 		Options: opt,
 	})
@@ -72,18 +66,18 @@ func (repository *StravaRepository) AddIndex(dbName string, collection string, i
 
 // Operations
 
-func (repository *StravaRepository) AddNewSubscription(data *domain.StravaSubscription) error {
+func (repository *StravaRepository) AddNewSubscription(ctx context.Context, data *domain.StravaSubscription) error {
 	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaSubscriptionCollectionName)
-	ctx, cancel := createTimeoutContext()
+	ctx, cancel := createTimeoutFromInnerContext(ctx)
 	defer cancel()
 	_, err := collection.InsertOne(ctx, data)
 
 	return err
 }
 
-func (repository *StravaRepository) UpdateDetailedActivity(activityID int64, updates interface{}) (*strava.DetailedActivity, error) {
+func (repository *StravaRepository) UpdateDetailedActivity(ctx context.Context, activityID int64, updates interface{}) (*strava.DetailedActivity, error) {
 	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaActivityCollectionName)
-	ctx, cancel := createTimeoutContext()
+	ctx, cancel := createTimeoutFromInnerContext(ctx)
 	defer cancel()
 	upd, err := collection.UpdateByID(ctx, activityID, bson.M{"$set": updates})
 
@@ -98,9 +92,9 @@ func (repository *StravaRepository) UpdateDetailedActivity(activityID int64, upd
 	return nil, nil
 }
 
-func (repository *StravaRepository) AddDetailedActivity(activity *strava.DetailedActivity) error {
+func (repository *StravaRepository) AddDetailedActivity(ctx context.Context, activity *strava.DetailedActivity) error {
 	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaActivityCollectionName)
-	ctx, cancel := createTimeoutContext()
+	ctx, cancel := createTimeoutFromInnerContext(ctx)
 	defer cancel()
 	collection.DeleteOne(ctx, bson.D{{"_id", activity.ID}})
 
@@ -109,9 +103,9 @@ func (repository *StravaRepository) AddDetailedActivity(activity *strava.Detaile
 	return err
 }
 
-func (repository *StravaRepository) UpsertToken(innerCtx context.Context, token *domain.StravaToken) error {
+func (repository *StravaRepository) UpsertToken(ctx context.Context, token *domain.StravaToken) error {
 	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaTokenCollectionName)
-	ctx, cancel := createTimeoutFromInnerContext(innerCtx)
+	ctx, cancel := createTimeoutFromInnerContext(ctx)
 	defer cancel()
 
 	opts := options.Update().SetUpsert(true)
@@ -127,9 +121,9 @@ func (repository *StravaRepository) UpsertToken(innerCtx context.Context, token 
 	return nil
 }
 
-func (repository *StravaRepository) GetToken(athleteId int64) (*domain.StravaToken, error) {
+func (repository *StravaRepository) GetToken(ctx context.Context, athleteId int64) (*domain.StravaToken, error) {
 	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaTokenCollectionName)
-	ctx, cancel := createTimeoutContext()
+	ctx, cancel := createTimeoutFromInnerContext(ctx)
 	defer cancel()
 
 	var token *domain.StravaToken
@@ -138,9 +132,9 @@ func (repository *StravaRepository) GetToken(athleteId int64) (*domain.StravaTok
 	return token, err
 }
 
-func (repository *StravaRepository) GetActivity(innerCtx context.Context, activityId int64) (*strava.DetailedActivity, error) {
+func (repository *StravaRepository) GetActivity(ctx context.Context, activityId int64) (*strava.DetailedActivity, error) {
 	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaActivityCollectionName)
-	ctx, cancel := createTimeoutFromInnerContext(innerCtx)
+	ctx, cancel := createTimeoutFromInnerContext(ctx)
 	defer cancel()
 
 	var activity *strava.DetailedActivity
@@ -175,10 +169,6 @@ func (repository *StravaRepository) GetActivities(innerCtx context.Context, athl
 	}
 
 	return activities, nil
-}
-
-func createTimeoutContext() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), 15*time.Second)
 }
 
 func createTimeoutFromInnerContext(innerCtx context.Context) (context.Context, context.CancelFunc) {

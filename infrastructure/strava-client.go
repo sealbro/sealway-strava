@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -51,7 +52,7 @@ func (client *StravaClient) Close() {
 	close(client.QueueUpdateQuota)
 }
 
-func (client *StravaClient) RefreshToken(refreshToken string) (*string, error) {
+func (client *StravaClient) RefreshToken(ctx context.Context, refreshToken string) (*string, error) {
 	url := "https://www.strava.com/api/v3/oauth/token"
 
 	values := map[string]string{
@@ -65,7 +66,15 @@ func (client *StravaClient) RefreshToken(refreshToken string) (*string, error) {
 		return nil, err
 	}
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
+	req.Header.Add("Content-Type", "application/json;charset=utf-8")
+	req.WithContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	httpClient := http.DefaultClient
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

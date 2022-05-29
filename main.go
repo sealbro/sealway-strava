@@ -11,6 +11,7 @@ import (
 	"sealway-strava/pkg/closer"
 	"sealway-strava/pkg/env"
 	"sealway-strava/pkg/graceful"
+	"sealway-strava/pkg/logger"
 	"sealway-strava/repository"
 	"sealway-strava/usecase"
 	"strconv"
@@ -42,49 +43,53 @@ func main() {
 func setupContainer() *dig.Container {
 	container := dig.New()
 
-	container.Provide(func() *usercase.BatchConfig {
+	panicOrProvide(container, func() *usercase.BatchConfig {
 		return &usercase.BatchConfig{
 			ActivityBatchSize: activityBatchSize,
 			ActivityBatchTime: activityBatchTime,
 		}
 	})
-	container.Provide(func() *rest.ApiConfig {
+	panicOrProvide(container, func() *rest.ApiConfig {
 		return &rest.ApiConfig{
 			ApplicationSlug: applicationSlug,
 			Router:          mux.NewRouter(),
 		}
 	})
-	container.Provide(func() *internal.ServerConfig {
+	panicOrProvide(container, func() *internal.ServerConfig {
 		return &internal.ServerConfig{
 			Port: port,
 		}
 	})
-	container.Provide(func() *infrastructure.StravaConfig {
+	panicOrProvide(container, func() *infrastructure.StravaConfig {
 		return &infrastructure.StravaConfig{
 			ClientId: stravaClientId,
 			SecretId: stravaSecretId,
 		}
 	})
-	container.Provide(func() *repository.MongoConfig {
+	panicOrProvide(container, func() *repository.MongoConfig {
 		return &repository.MongoConfig{
 			ConnectionString: connectionString,
 		}
 	})
 
-	container.Provide(usercase.MakeSubscriptionManager)
-	container.Provide(usercase.MakeStravaService)
-	container.Provide(infrastructure.MakeStravaClient)
-	err := container.Provide(repository.MakeStravaRepository)
-	if err != nil {
-		panic(err)
-	}
+	panicOrProvide(container, usercase.MakeSubscriptionManager)
+	panicOrProvide(container, usercase.MakeStravaService)
+	panicOrProvide(container, infrastructure.MakeStravaClient)
+	panicOrProvide(container, repository.MakeStravaRepository)
 
-	container.Provide(usercase.MakeBackgroundWorker)
-	container.Provide(rest.MakeRestApi)
-	container.Provide(rest.MakeSubscriptionApi)
-	container.Provide(graph.MakeGraphqlApi)
-	container.Provide(closer.MakeCloserCollection)
-	container.Provide(internal.MakeApplication)
+	panicOrProvide(container, usercase.MakeBackgroundWorker)
+	panicOrProvide(container, rest.MakeRestApi)
+	panicOrProvide(container, rest.MakeSubscriptionApi)
+	panicOrProvide(container, graph.MakeGraphqlApi)
+	panicOrProvide(container, closer.MakeCloserCollection)
+	panicOrProvide(container, internal.MakeApplication)
 
 	return container
+}
+
+func panicOrProvide(container *dig.Container, constructor interface{}, opts ...dig.ProvideOption) {
+	err := container.Provide(constructor, opts...)
+	if err != nil {
+		logger.Fatalf("container.Provide: $v", err)
+	}
 }

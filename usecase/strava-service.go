@@ -4,21 +4,31 @@ import (
 	"context"
 	"fmt"
 	"github.com/antihax/optional"
+	"github.com/jellydator/ttlcache/v3"
 	"sealway-strava/domain/strava"
 	"sealway-strava/infrastructure"
 	"sealway-strava/pkg/closer"
 	"sealway-strava/repository"
+	"time"
 )
 
 type StravaService struct {
 	client     *infrastructure.StravaClient
 	repository *repository.StravaRepository
+	cache      *ttlcache.Cache[string, string]
 }
 
 func MakeStravaService(collection *closer.CloserCollection, client *infrastructure.StravaClient, repository *repository.StravaRepository) *StravaService {
+	cache := ttlcache.New[string, string](
+		ttlcache.WithTTL[string, string](time.Hour),
+	)
+
+	go cache.Start()
+
 	service := &StravaService{
 		client:     client,
 		repository: repository,
+		cache:      cache,
 	}
 
 	collection.Add(service)
@@ -112,20 +122,26 @@ func (service *StravaService) getStravaAuthContext(ctx context.Context, athleteI
 		return ctx
 	}
 
-	return context.WithValue(ctx, strava.ContextAccessToken, *token)
+	return context.WithValue(ctx, strava.ContextAccessToken, token)
 }
 
-// TODO redis cache
-func (service *StravaService) RefreshToken(ctx context.Context, athleteId int64) (*string, error) {
-	stravaToken, err := service.repository.GetToken(ctx, athleteId)
-	if err != nil {
-		return nil, err
+func (service *StravaService) RefreshToken(ctx context.Context, athleteId int64) (string, error) {
+	key := fmt.Sprintf("RefreshToken_%v", athleteId)
+	item := service.cache.Get(key)
+	if item != nil {
+		return item.Value(), nil
 	}
 
+	stravaToken, err := service.repository.GetToken(ctx, athleteId)
+	if err != nil {
+		return "", err
+	}
 	accessToken, err := service.client.RefreshToken(ctx, stravaToken.Refresh)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
+
+	service.cache.Set(key, accessToken, 30*time.Minute)
 
 	return accessToken, err
 }

@@ -52,7 +52,7 @@ func (client *StravaClient) Close() {
 	close(client.QueueUpdateQuota)
 }
 
-func (client *StravaClient) RefreshToken(ctx context.Context, refreshToken string) (*string, error) {
+func (client *StravaClient) RefreshToken(ctx context.Context, refreshToken string) (string, error) {
 	url := "https://www.strava.com/api/v3/oauth/token"
 
 	values := map[string]string{
@@ -63,31 +63,29 @@ func (client *StravaClient) RefreshToken(ctx context.Context, refreshToken strin
 	}
 	data, err := json.Marshal(values)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
 	req.Header.Add("Content-Type", "application/json;charset=utf-8")
 	req.WithContext(ctx)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	httpClient := http.DefaultClient
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	var res map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&res)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	accessToken := res["access_token"].(string)
-
-	return &accessToken, nil
+	return res["access_token"].(string), nil
 }
 
 func (client *StravaClient) CheckQuota() error {
@@ -110,8 +108,8 @@ func (client *StravaClient) UpdateQuota(response *http.Response) {
 		return
 	}
 
-	limitHeader := "X-Ratelimit-Limit"
-	usageHeader := "X-Ratelimit-Usage"
+	const limitHeader = "X-Ratelimit-Limit"
+	const usageHeader = "X-Ratelimit-Usage"
 
 	limits := response.Header[limitHeader]
 	usages := response.Header[usageHeader]

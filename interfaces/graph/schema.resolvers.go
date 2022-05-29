@@ -16,7 +16,7 @@ func (r *mutationResolver) AddToken(ctx context.Context, tokens []*model.NewAthl
 	var errResult error
 
 	for _, input := range tokens {
-		err := r.Repository.UpsertToken(ctx, &domain.StravaToken{
+		err := r.Repository.UpsertToken(ctx, domain.StravaToken{
 			AthleteID: input.AthleteID,
 			Refresh:   input.Refresh,
 		})
@@ -78,7 +78,7 @@ func (r *queryResolver) Token(ctx context.Context, athleteID int64) ([]*model.At
 
 	return []*model.AthleteToken{{
 		AthleteID: athleteID,
-		Refresh:   *token,
+		Refresh:   token,
 	}}, nil
 }
 

@@ -49,19 +49,17 @@ func (repository *StravaRepository) Close(ctx context.Context) error {
 	return repository.Client.Disconnect(ctx)
 }
 
-func (repository *StravaRepository) addIndex(ctx context.Context, dbName string, collection string, indexKeys interface{}, opt *options.IndexOptions) error {
+func (repository *StravaRepository) addIndex(ctx context.Context, dbName string, collection string, indexKeys interface{}, opt *options.IndexOptions) {
 	serviceCollection := repository.Client.Database(dbName).Collection(collection)
 	indexName, err := serviceCollection.Indexes().CreateOne(ctx, mongo.IndexModel{
 		Keys:    indexKeys,
 		Options: opt,
 	})
 	if err != nil {
-		return err
+		logger.Fatalf("can't create index %s -> %s -> %v: %v", collection, dbName, indexKeys, err)
 	}
 
 	logger.Tracef("Index created: %s", indexName)
-
-	return nil
 }
 
 // Operations
@@ -103,7 +101,7 @@ func (repository *StravaRepository) AddDetailedActivity(ctx context.Context, act
 	return err
 }
 
-func (repository *StravaRepository) UpsertToken(ctx context.Context, token *domain.StravaToken) error {
+func (repository *StravaRepository) UpsertToken(ctx context.Context, token domain.StravaToken) error {
 	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaTokenCollectionName)
 	ctx, cancel := createTimeoutFromInnerContext(ctx)
 	defer cancel()
@@ -121,12 +119,12 @@ func (repository *StravaRepository) UpsertToken(ctx context.Context, token *doma
 	return nil
 }
 
-func (repository *StravaRepository) GetToken(ctx context.Context, athleteId int64) (*domain.StravaToken, error) {
+func (repository *StravaRepository) GetToken(ctx context.Context, athleteId int64) (domain.StravaToken, error) {
 	collection := repository.Client.Database(stravaDataBaseName).Collection(stravaTokenCollectionName)
 	ctx, cancel := createTimeoutFromInnerContext(ctx)
 	defer cancel()
 
-	var token *domain.StravaToken
+	var token domain.StravaToken
 	err := collection.FindOne(ctx, bson.D{{"_id", athleteId}}).Decode(&token)
 
 	return token, err

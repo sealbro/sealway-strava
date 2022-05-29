@@ -36,7 +36,7 @@ func (api *SubscriptionApi) RegisterApiRoutes() {
 	api.Router.HandleFunc(api.Prefix(urlPrefix, "/subscription"), api.subscription).Methods("POST")
 }
 
-func (api *SubscriptionApi) quota(w http.ResponseWriter, r *http.Request) {
+func (api *SubscriptionApi) quota(w http.ResponseWriter, _ *http.Request) {
 	respondWithJSON(w, http.StatusOK, &api.StravaClient.Quota)
 }
 
@@ -68,5 +68,5 @@ func (api *SubscriptionApi) subscription(w http.ResponseWriter, r *http.Request)
 
 	api.ActivitiesQueue <- data
 
-	respondWithJSON(w, http.StatusCreated, "successful")
+	respondWithJSON(w, http.StatusCreated, "Successful")
 }

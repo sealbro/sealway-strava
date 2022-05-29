@@ -93,9 +93,8 @@ func (manager *SubscriptionManager) RemoveSubscriber(key string) {
 func (manager *SubscriptionManager) Close(context.Context) error {
 	manager.closed = true
 
-	for key, subscriber := range manager.subscribers {
-		close(subscriber)
-		delete(manager.subscribers, key)
+	for key := range manager.subscribers {
+		manager.RemoveSubscriber(key)
 	}
 
 	close(manager.inputActivity)

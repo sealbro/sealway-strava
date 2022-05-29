@@ -80,6 +80,18 @@ job "sealway-strava" {
 
         logging {
           type = "loki"
+          config {
+            loki-pipeline-stages = <<EOH
+- static_labels:
+    app: sealway-strava
+- json:
+    expressions:
+      time: ts_orig
+- timestamp:
+    source: time
+    format: RFC3339
+EOH
+          }
         }
       }
 

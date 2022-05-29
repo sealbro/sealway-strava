@@ -37,13 +37,13 @@ func (graceful *Graceful) RunAndWait() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer func() {
 		if err := graceful.DeferAction(ctx); err != nil {
-			logger.Fatalf("Server  Failed:%+v", err)
+			logger.Errorf("Server  Failed:%+v", err)
 		}
 		cancel()
 	}()
 
 	if err := graceful.ShutdownAction(ctx); err != nil {
-		logger.Fatalf("Server Shutdown Failed:%+v", err)
+		logger.Errorf("Server Shutdown Failed:%+v", err)
 	}
 	logger.Info("Server Exited Properly")
 }

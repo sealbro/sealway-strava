@@ -43,16 +43,22 @@ func Error(message string) {
 
 func Fatalf(format string, v ...interface{}) {
 	Printf("FATAL", format, v...)
+
+	panic(fmt.Errorf(format, v))
 }
+
 func Fatal(message string) {
 	Printf("FATAL", message)
+
+	panic(fmt.Errorf(message))
 }
 
 type LogEvent struct {
-	Timestamp string `json:"ts"`
+	Timestamp string `json:"ts_orig"`
 	Level     string `json:"level"`
 	Source    string `json:"source"`
 	Message   string `json:"message"`
+	Hash      string `json:"hash"`
 }
 
 func Printf(level string, format string, v ...interface{}) {
@@ -61,6 +67,7 @@ func Printf(level string, format string, v ...interface{}) {
 		Level:     level,
 		Timestamp: time.Now().Format(time.RFC3339),
 		Message:   fmt.Sprintf(format, v...),
+		Hash:      calculateHash(format),
 	}
 
 	jsonText, err := json.Marshal(event)
@@ -96,4 +103,14 @@ func getSource(callDepth int) string {
 	split := strings.Split(file, "/")
 	file = split[len(split)-1]
 	return fmt.Sprintf("%s:%d", file, line)
+}
+
+func calculateHash(read string) string {
+	var hashedValue uint64 = 3074457345618258791
+	for _, char := range read {
+		hashedValue += uint64(char)
+		hashedValue *= 3074457345618258799
+	}
+
+	return strings.ToUpper(fmt.Sprintf("%x", hashedValue))
 }

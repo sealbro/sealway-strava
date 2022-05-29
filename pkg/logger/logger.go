@@ -49,10 +49,10 @@ func Fatal(message string) {
 }
 
 type LogEvent struct {
-	Timestamp string `json:"@t"`
-	Level     string `json:"@l"`
-	Source    string `json:"@s"`
-	Message   string `json:"@m"`
+	Timestamp string `json:"ts"`
+	Level     string `json:"level"`
+	Source    string `json:"source"`
+	Message   string `json:"message"`
 }
 
 func Printf(level string, format string, v ...interface{}) {
